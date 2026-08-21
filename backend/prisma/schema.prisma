@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERATIONS_USER
+  SALES_USER
+}
+
+enum MovementType {
+  IN
+  OUT
+  RESERVE
+  RELEASE
+  TRANSFER_OUT
+  TRANSFER_IN
+}
+
+enum WorkOrderStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TransferStatus {
+  REQUESTED
+  DISPATCHED
+  RECEIVED
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  RESERVED
+  RELEASED
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role
+  locationId   String?
+  location     Location?   @relation(fields: [locationId], references: [id])
+  workOrders   WorkOrder[] @relation("AssignedWorkOrders")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Location {
+  id                   String      @id @default(uuid())
+  name                 String
+  code                 String      @unique
+  address              String
+  users                User[]
+  inventories          Inventory[]
+  workOrders           WorkOrder[]
+  sourceTransfers      Transfer[]  @relation("SourceLocation")
+  destinationTransfers Transfer[]  @relation("DestinationLocation")
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Item {
+  id          String              @id @default(uuid())
+  sku         String              @unique
+  name        String
+  categoryId  String
+  category    Category            @relation(fields: [categoryId], references: [id])
+  unit        String
+  active      Boolean             @default(true)
+  inventories Inventory[]
+  workOrders  WorkOrder[]
+  transfers   Transfer[]
+  orderItems  CustomerOrderItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model Inventory {
+  id               String                 @id @default(uuid())
+  itemId           String
+  item             Item                   @relation(fields: [itemId], references: [id])
+  locationId       String
+  location         Location               @relation(fields: [locationId], references: [id])
+  physicalQuantity Int                    @default(0)
+  reservedQuantity Int                    @default(0)
+  transactions     InventoryTransaction[]
+  reservations     Reservation[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@unique([itemId, locationId])
+}
+
+model InventoryTransaction {
+  id            String       @id @default(uuid())
+  inventoryId   String
+  inventory     Inventory    @relation(fields: [inventoryId], references: [id])
+  quantity      Int
+  movementType  MovementType
+  reason        String
+  referenceType String?
+  referenceId   String?
+  createdBy     String
+  createdAt     DateTime     @default(now())
+}
+
+model WorkOrder {
+  id              String          @id @default(uuid())
+  workOrderNumber String          @unique
+  locationId      String
+  location        Location        @relation(fields: [locationId], references: [id])
+  itemId          String
+  item            Item            @relation(fields: [itemId], references: [id])
+  requiredQuantity Int
+  assignedUserId  String
+  assignedUser    User            @relation("AssignedWorkOrders", fields: [assignedUserId], references: [id])
+  status          WorkOrderStatus @default(ASSIGNED)
+  createdBy       String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Transfer {
+  id                    String         @id @default(uuid())
+  transferNumber        String         @unique
+  sourceLocationId      String
+  sourceLocation        Location       @relation("SourceLocation", fields: [sourceLocationId], references: [id])
+  destinationLocationId String
+  destinationLocation   Location       @relation("DestinationLocation", fields: [destinationLocationId], references: [id])
+  itemId                String
+  item                  Item           @relation(fields: [itemId], references: [id])
+  quantity              Int
+  status                TransferStatus @default(REQUESTED)
+  createdBy             String
+  dispatchedAt          DateTime?
+  receivedAt            DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+}
+
+model Customer {
+  id          String          @id @default(uuid())
+  name        String
+  phone       String
+  email       String          @unique
+  companyName String
+  orders      CustomerOrder[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model CustomerOrder {
+  id          String              @id @default(uuid())
+  orderNumber String              @unique
+  customerId  String
+  customer    Customer            @relation(fields: [customerId], references: [id])
+  status      OrderStatus         @default(DRAFT)
+  createdBy   String
+  items       CustomerOrderItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model CustomerOrderItem {
+  id           String        @id @default(uuid())
+  orderId      String
+  order        CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         Item          @relation(fields: [itemId], references: [id])
+  quantity     Int
+  unitPrice    Float
+  reservations Reservation[]
+}
+
+model Reservation {
+  id          String            @id @default(uuid())
+  orderItemId String
+  orderItem   CustomerOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  inventoryId String
+  inventory   Inventory         @relation(fields: [inventoryId], references: [id])
+  quantity    Int
+  status      ReservationStatus @default(RESERVED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
