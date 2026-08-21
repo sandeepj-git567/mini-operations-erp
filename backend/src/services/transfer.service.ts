@@ -1,7 +1,8 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { TransferStatus, MovementType, Prisma } from '@prisma/client';
+import { TransferStatus, MovementType } from '../types';
+import { Prisma } from '@prisma/client';
 
 export class TransferService {
   static async createTransfer(

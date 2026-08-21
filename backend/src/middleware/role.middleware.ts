@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { Role } from '@prisma/client';
+import { Role } from '../types';
 import { AuthRequest } from '../types';
 import { ForbiddenError } from '../utils/errors';
 

@@ -1,5 +1,7 @@
 import { Request } from 'express';
-import { Role } from '@prisma/client';
+import { Role } from './enums';
+
+export * from './enums';
 
 export interface JwtPayload {
   userId: string;

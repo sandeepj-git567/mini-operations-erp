@@ -3,7 +3,7 @@ import { OrderService } from '../services/order.service';
 import { ReservationService } from '../services/reservation.service';
 import { createOrderSchema, reserveStockSchema } from '../validators/order.validator';
 import { AuthRequest } from '../types';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../types';
 
 export class OrderController {
   static async createOrder(req: AuthRequest, res: Response, next: NextFunction) {

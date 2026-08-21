@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../types';
 
 export class OrderService {
   static async createCustomer(name: string, phone: string, email: string, companyName: string) {
@@ -39,7 +39,8 @@ export class OrderService {
     }
 
     const count = await prisma.customerOrder.count();
-    const orderNumber = `ORD-${1000 + count + 1}`;
+    const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
+    const orderNumber = `ORD-${1000 + count + 1}-${uniqueSuffix}`;
 
     const order = await prisma.customerOrder.create({
       data: {

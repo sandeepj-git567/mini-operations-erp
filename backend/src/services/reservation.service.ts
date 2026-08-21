@@ -1,7 +1,8 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { MovementType, OrderStatus, ReservationStatus, Prisma } from '@prisma/client';
+import { MovementType, OrderStatus, ReservationStatus } from '../types';
+import { Prisma } from '@prisma/client';
 
 export class ReservationService {
   static async reserveStockForOrder(orderId: string, locationId: string, createdBy: string) {

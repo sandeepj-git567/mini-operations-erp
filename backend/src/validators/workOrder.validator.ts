@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WorkOrderStatus } from '../types';
 
 export const createWorkOrderSchema = z.object({
   locationId: z.string().uuid('Invalid Location ID'),
@@ -8,5 +9,5 @@ export const createWorkOrderSchema = z.object({
 });
 
 export const updateWorkOrderStatusSchema = z.object({
-  status: z.enum(['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'])
+  status: z.nativeEnum(WorkOrderStatus)
 });

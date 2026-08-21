@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { TransferService } from '../services/transfer.service';
 import { createTransferSchema } from '../validators/transfer.validator';
 import { AuthRequest } from '../types';
-import { TransferStatus } from '@prisma/client';
+import { TransferStatus } from '../types';
 
 export class TransferController {
   static async createTransfer(req: AuthRequest, res: Response, next: NextFunction) {

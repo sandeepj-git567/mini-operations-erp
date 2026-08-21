@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { WorkOrderStatus } from '@prisma/client';
+import { WorkOrderStatus } from '../types';
 
 export class WorkOrderService {
   static async createWorkOrder(

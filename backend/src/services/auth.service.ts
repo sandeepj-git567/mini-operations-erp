@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/prisma';
 import { UnauthorizedError, NotFoundError } from '../utils/errors';
-import { JwtPayload } from '../types';
+import { JwtPayload, Role } from '../types';
 
 export class AuthService {
   static async login(email: string, password: string) {
@@ -24,7 +24,7 @@ export class AuthService {
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role as Role,
       name: user.name
     };
 

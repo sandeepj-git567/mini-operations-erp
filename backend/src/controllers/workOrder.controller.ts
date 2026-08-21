@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { WorkOrderService } from '../services/workOrder.service';
 import { createWorkOrderSchema, updateWorkOrderStatusSchema } from '../validators/workOrder.validator';
 import { AuthRequest } from '../types';
-import { WorkOrderStatus } from '@prisma/client';
+import { WorkOrderStatus } from '../types';
 
 export class WorkOrderController {
   static async createWorkOrder(req: AuthRequest, res: Response, next: NextFunction) {

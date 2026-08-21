@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { OrderController } from '../controllers/order.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/role.middleware';
-import { Role } from '@prisma/client';
+import { Role } from '../types';
 
 const router = Router();
 

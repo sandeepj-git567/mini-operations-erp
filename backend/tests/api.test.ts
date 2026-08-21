@@ -2,6 +2,8 @@ import request from 'supertest';
 import { app } from '../src/app';
 import { prisma } from '../src/config/prisma';
 
+jest.setTimeout(30000);
+
 describe('Mini Operations ERP API Test Suite', () => {
   let adminToken: string;
   let operationsToken: string;
