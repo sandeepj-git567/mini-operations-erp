@@ -1,4 +1,4 @@
-import { PrismaClient, Role, WorkOrderStatus, TransferStatus, OrderStatus } from '@prisma/client';
+import { PrismaClient, Role, WorkOrderStatus, TransferStatus, OrderStatus, Item } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -89,7 +89,7 @@ async function main() {
     { sku: 'ACC-002', name: 'DIN Rail Mounting Bracket Kit', categoryId: accessoriesCat.id, unit: 'SET' }
   ];
 
-  const createdItems: any[] = [];
+  const createdItems: Item[] = [];
   for (const item of itemsData) {
     const created = await prisma.item.create({ data: item });
     createdItems.push(created);
@@ -97,10 +97,10 @@ async function main() {
 
   console.log('[Seed] Creating Initial Inventories...');
   // Item 0: Microcontroller
-  const invBlr0 = await prisma.inventory.create({
+  await prisma.inventory.create({
     data: { itemId: createdItems[0].id, locationId: bangalore.id, physicalQuantity: 30, reservedQuantity: 0 }
   });
-  const invMaa0 = await prisma.inventory.create({
+  await prisma.inventory.create({
     data: { itemId: createdItems[0].id, locationId: chennai.id, physicalQuantity: 50, reservedQuantity: 0 }
   });
 
@@ -167,7 +167,7 @@ async function main() {
   });
 
   console.log('[Seed] Creating Sample Customer Order...');
-  const customerOrder = await prisma.customerOrder.create({
+  await prisma.customerOrder.create({
     data: {
       orderNumber: 'ORD-1001',
       customerId: customer.id,
