@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@prisma/client": ["./backend/node_modules/@prisma/client"]
+    }
+  },
+  "files": [],
+  "references": [
+    { "path": "./backend" }
+  ]
+}
