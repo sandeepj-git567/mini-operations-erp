@@ -1,11 +1,11 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { MovementType, OrderStatus, ReservationStatus } from '@prisma/client';
+import { MovementType, OrderStatus, ReservationStatus, Prisma } from '@prisma/client';
 
 export class ReservationService {
   static async reserveStockForOrder(orderId: string, locationId: string, createdBy: string) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const order = await tx.customerOrder.findUnique({
         where: { id: orderId },
         include: {
@@ -125,7 +125,7 @@ export class ReservationService {
   }
 
   static async cancelOrder(orderId: string, createdBy: string) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const order = await tx.customerOrder.findUnique({
         where: { id: orderId },
         include: {

@@ -66,7 +66,7 @@ export class WorkOrderService {
 
     // Compute shortage for each work order
     const results = await Promise.all(
-      workOrders.map(async (wo) => {
+      workOrders.map(async (wo: any) => {
         const inv = await prisma.inventory.findUnique({
           where: { itemId_locationId: { itemId: wo.itemId, locationId: wo.locationId } }
         });

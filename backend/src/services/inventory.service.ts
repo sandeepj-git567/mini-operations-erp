@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { MovementType } from '@prisma/client';
+import { MovementType, Prisma } from '@prisma/client';
 
 export class InventoryService {
   static async getInventories(locationId?: string, categoryId?: string, lowStock?: boolean) {
@@ -20,13 +20,13 @@ export class InventoryService {
       orderBy: { item: { sku: 'asc' } }
     });
 
-    const inventoriesWithAvailable = rawInventories.map(inv => ({
+    const inventoriesWithAvailable = rawInventories.map((inv) => ({
       ...inv,
       availableQuantity: inv.physicalQuantity - inv.reservedQuantity
     }));
 
     if (lowStock) {
-      return inventoriesWithAvailable.filter(inv => inv.availableQuantity < 10);
+      return inventoriesWithAvailable.filter((inv) => inv.availableQuantity < 10);
     }
 
     return inventoriesWithAvailable;
@@ -62,7 +62,7 @@ export class InventoryService {
     reason: string,
     createdBy: string
   ) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let inv = await tx.inventory.findUnique({
         where: { itemId_locationId: { itemId, locationId } }
       });

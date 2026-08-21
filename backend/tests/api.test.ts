@@ -30,8 +30,8 @@ describe('Mini Operations ERP API Test Suite', () => {
 
     // Fetch seed IDs
     const locations = await prisma.location.findMany();
-    const blr = locations.find(l => l.code === 'BLR-WH')!;
-    const maa = locations.find(l => l.code === 'MAA-WH')!;
+    const blr = locations.find((l: any) => l.code === 'BLR-WH')!;
+    const maa = locations.find((l: any) => l.code === 'MAA-WH')!;
     bangaloreLocationId = blr.id;
     chennaiLocationId = maa.id;
 

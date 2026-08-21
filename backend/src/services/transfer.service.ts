@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma';
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
-import { TransferStatus, MovementType } from '@prisma/client';
+import { TransferStatus, MovementType, Prisma } from '@prisma/client';
 
 export class TransferService {
   static async createTransfer(
@@ -71,7 +71,7 @@ export class TransferService {
   }
 
   static async dispatchTransfer(id: string, createdBy: string) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const transfer = await tx.transfer.findUnique({
         where: { id },
         include: {
@@ -154,7 +154,7 @@ export class TransferService {
   }
 
   static async receiveTransfer(id: string, createdBy: string) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const transfer = await tx.transfer.findUnique({
         where: { id },
         include: {
