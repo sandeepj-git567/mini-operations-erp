@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { Role, WorkOrderStatus, TransferStatus, OrderStatus } from '../src/types/enums';
 
@@ -90,7 +90,7 @@ async function main() {
     { sku: 'ACC-002', name: 'DIN Rail Mounting Bracket Kit', categoryId: accessoriesCat.id, unit: 'SET' }
   ];
 
-  const createdItems: Prisma.ItemGetPayload<{}>[] = [];
+  const createdItems: any[] = [];
   for (const item of itemsData) {
     const created = await prisma.item.create({ data: item });
     createdItems.push(created);
