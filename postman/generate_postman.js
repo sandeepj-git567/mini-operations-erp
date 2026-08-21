@@ -1,0 +1,1109 @@
+const fs = require('fs');
+const path = require('path');
+
+const collection = {
+  info: {
+    name: 'Mini Operations ERP',
+    description: 'Complete Postman API Collection with automated tests, negative tests, role-based auth, and full business flow.',
+    schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+  },
+  item: [
+    {
+      name: 'Authentication',
+      item: [
+        {
+          name: 'Login Admin',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Content-Type', value: 'application/json' }],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ email: 'admin@example.com', password: 'Password123!' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/auth/login', host: ['{{baseUrl}}'], path: ['auth', 'login'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.test("Token received", function () { pm.expect(jsonData.token).to.be.a("string"); });',
+                  'pm.environment.set("adminToken", jsonData.token);',
+                  'pm.environment.set("token", jsonData.token);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Login Operations',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Content-Type', value: 'application/json' }],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ email: 'operations@example.com', password: 'Password123!' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/auth/login', host: ['{{baseUrl}}'], path: ['auth', 'login'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.test("Operations token received", function () { pm.expect(jsonData.token).to.be.a("string"); });',
+                  'pm.environment.set("operationsToken", jsonData.token);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Login Sales',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Content-Type', value: 'application/json' }],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ email: 'sales@example.com', password: 'Password123!' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/auth/login', host: ['{{baseUrl}}'], path: ['auth', 'login'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.test("Sales token received", function () { pm.expect(jsonData.token).to.be.a("string"); });',
+                  'pm.environment.set("salesToken", jsonData.token);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Get Current User',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/auth/me', host: ['{{baseUrl}}'], path: ['auth', 'me'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.test("User object returned", function () { pm.expect(jsonData.email).to.eql("admin@example.com"); });'
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Inventory',
+      item: [
+        {
+          name: 'Get All Inventory',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory', host: ['{{baseUrl}}'], path: ['inventory'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.test("Inventory array returned", function () { pm.expect(jsonData).to.be.an("array"); });',
+                  'if (jsonData.length > 0) { pm.environment.set("inventoryId", jsonData[0].id); pm.environment.set("itemId", jsonData[0].itemId); pm.environment.set("locationId", jsonData[0].locationId); }'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Get Single Inventory Item',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory/{{inventoryId}}', host: ['{{baseUrl}}'], path: ['inventory', '{{inventoryId}}'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Adjust Stock',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{adminToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                itemId: '{{itemId}}',
+                locationId: '{{locationId}}',
+                quantity: 15,
+                reason: 'Postman manual stock intake'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/inventory/adjust', host: ['{{baseUrl}}'], path: ['inventory', 'adjust'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Get Inventory Transactions',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory/{{inventoryId}}/transactions', host: ['{{baseUrl}}'], path: ['inventory', '{{inventoryId}}', 'transactions'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Work Orders',
+      item: [
+        {
+          name: 'List Work Orders',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Create Work Order',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{adminToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                locationId: '{{locationId}}',
+                itemId: '{{itemId}}',
+                requiredQuantity: 50,
+                assignedUserId: '{{userId}}'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("workOrderId", jsonData.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Get Work Order by ID',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/work-orders/{{workOrderId}}', host: ['{{baseUrl}}'], path: ['work-orders', '{{workOrderId}}'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Update Work Order Status',
+          request: {
+            method: 'PATCH',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{adminToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ status: 'IN_PROGRESS' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/work-orders/{{workOrderId}}/status', host: ['{{baseUrl}}'], path: ['work-orders', '{{workOrderId}}', 'status'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Transfers',
+      item: [
+        {
+          name: 'List Transfers',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Create Transfer',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{operationsToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                sourceLocationId: '{{sourceLocationId}}',
+                destinationLocationId: '{{destinationLocationId}}',
+                itemId: '{{itemId}}',
+                quantity: 10
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("transferId", jsonData.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Dispatch Transfer',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{transferId}}/dispatch', host: ['{{baseUrl}}'], path: ['transfers', '{{transferId}}', 'dispatch'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Receive Transfer',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{transferId}}/receive', host: ['{{baseUrl}}'], path: ['transfers', '{{transferId}}', 'receive'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Customers',
+      item: [
+        {
+          name: 'List Customers',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
+            url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'if (jsonData.length > 0) { pm.environment.set("customerId", jsonData[0].id); }'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Create Customer',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                name: 'Postman Test Customer',
+                phone: '+91 9999999999',
+                email: 'postman.test@customer.com',
+                companyName: 'Postman Global Corp'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("customerId", jsonData.id);'
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Customer Orders',
+      item: [
+        {
+          name: 'List Customer Orders',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
+            url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Create Order',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                customerId: '{{customerId}}',
+                items: [
+                  { itemId: '{{itemId}}', quantity: 5, unitPrice: 1200 }
+                ]
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("orderId", jsonData.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Get Order by ID',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
+            url: { raw: '{{baseUrl}}/orders/{{orderId}}', host: ['{{baseUrl}}'], path: ['orders', '{{orderId}}'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Reserve Stock',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ locationId: '{{locationId}}' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders/{{orderId}}/reserve', host: ['{{baseUrl}}'], path: ['orders', '{{orderId}}', 'reserve'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Cancel Order',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
+            url: { raw: '{{baseUrl}}/orders/{{orderId}}/cancel', host: ['{{baseUrl}}'], path: ['orders', '{{orderId}}', 'cancel'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Health',
+      item: [
+        {
+          name: 'Health Check',
+          request: {
+            method: 'GET',
+            url: { raw: '{{baseUrl}}/health', host: ['{{baseUrl}}'], path: ['health'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.test("Database connected", function () { pm.expect(jsonData.database).to.eql("CONNECTED"); });'
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Negative Tests',
+      item: [
+        {
+          name: 'Attempt Over-Reservation (409 Conflict)',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ locationId: '{{locationId}}' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders/{{overReserveOrderId}}/reserve', host: ['{{baseUrl}}'], path: ['orders', '{{overReserveOrderId}}', 'reserve'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: 'Attempt Transfer More Than Available (409 Conflict)',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{operationsToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                sourceLocationId: '{{sourceLocationId}}',
+                destinationLocationId: '{{destinationLocationId}}',
+                itemId: '{{itemId}}',
+                quantity: 999999
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Attempt Duplicate Dispatch (409 Conflict)',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{dispatchedTransferId}}/dispatch', host: ['{{baseUrl}}'], path: ['transfers', '{{dispatchedTransferId}}', 'dispatch'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Attempt Duplicate Receive (409 Conflict)',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{receivedTransferId}}/receive', host: ['{{baseUrl}}'], path: ['transfers', '{{receivedTransferId}}', 'receive'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Invalid Negative Quantity (400 Bad Request)',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{adminToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                locationId: '{{locationId}}',
+                itemId: '{{itemId}}',
+                requiredQuantity: -5,
+                assignedUserId: '{{userId}}'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 400 Bad Request", function () { pm.response.to.have.status(400); });']
+              }
+            }
+          ]
+        },
+        {
+          name: 'Unauthorized Role Access (403 Forbidden)',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                locationId: '{{locationId}}',
+                itemId: '{{itemId}}',
+                requiredQuantity: 10,
+                assignedUserId: '{{userId}}'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 403 Forbidden", function () { pm.response.to.have.status(403); });']
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'FINAL BUSINESS FLOW',
+      item: [
+        {
+          name: '1. Login Admin',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Content-Type', value: 'application/json' }],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ email: 'admin@example.com', password: 'Password123!' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/auth/login', host: ['{{baseUrl}}'], path: ['auth', 'login'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 200", function () { pm.response.to.have.status(200); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("adminToken", data.token);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '2. Get Inventory',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory', host: ['{{baseUrl}}'], path: ['inventory'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 200", function () { pm.response.to.have.status(200); });',
+                  'var data = pm.response.json();',
+                  'if (data.length > 0) {',
+                  '  pm.environment.set("itemId", data[0].itemId);',
+                  '  pm.environment.set("blrLocationId", data[0].locationId);',
+                  '}'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '3. Create Work Order',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{adminToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                locationId: '{{blrLocationId}}',
+                itemId: '{{itemId}}',
+                requiredQuantity: 50,
+                assignedUserId: '{{userId}}'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 201", function () { pm.response.to.have.status(201); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("flowWorkOrderId", data.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '4. Check Stock Availability',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/work-orders/{{flowWorkOrderId}}', host: ['{{baseUrl}}'], path: ['work-orders', '{{flowWorkOrderId}}'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 200", function () { pm.response.to.have.status(200); });',
+                  'var data = pm.response.json();',
+                  'pm.test("Shortage quantity computed", function () { pm.expect(data.shortageQuantity).to.be.a("number"); });'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '5. Create Internal Transfer',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{adminToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                sourceLocationId: '{{maaLocationId}}',
+                destinationLocationId: '{{blrLocationId}}',
+                itemId: '{{itemId}}',
+                quantity: 20
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 201", function () { pm.response.to.have.status(201); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("flowTransferId", data.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '6. Dispatch Transfer',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{flowTransferId}}/dispatch', host: ['{{baseUrl}}'], path: ['transfers', '{{flowTransferId}}', 'dispatch'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code 200", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: '7. Get Inventory Post Dispatch',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory', host: ['{{baseUrl}}'], path: ['inventory'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code 200", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: '8. Receive Transfer',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{flowTransferId}}/receive', host: ['{{baseUrl}}'], path: ['transfers', '{{flowTransferId}}', 'receive'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code 200", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: '9. Get Inventory Post Receive',
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory', host: ['{{baseUrl}}'], path: ['inventory'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code 200", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: '10. Login Sales',
+          request: {
+            method: 'POST',
+            header: [{ key: 'Content-Type', value: 'application/json' }],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ email: 'sales@example.com', password: 'Password123!' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/auth/login', host: ['{{baseUrl}}'], path: ['auth', 'login'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 200", function () { pm.response.to.have.status(200); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("salesToken", data.token);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '11. Create Customer',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                name: 'Business Flow Customer',
+                phone: '+91 9123456789',
+                email: 'flow.customer@example.com',
+                companyName: 'Flow Tech Industries'
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 201", function () { pm.response.to.have.status(201); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("flowCustomerId", data.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '12. Create Customer Order',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                customerId: '{{flowCustomerId}}',
+                items: [{ itemId: '{{itemId}}', quantity: 10, unitPrice: 1500 }]
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 201", function () { pm.response.to.have.status(201); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("flowOrderId", data.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '13. Reserve Stock',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ locationId: '{{blrLocationId}}' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders/{{flowOrderId}}/reserve', host: ['{{baseUrl}}'], path: ['orders', '{{flowOrderId}}', 'reserve'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code 200", function () { pm.response.to.have.status(200); });']
+              }
+            }
+          ]
+        },
+        {
+          name: '14. Attempt Over Reservation Failure',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({
+                customerId: '{{flowCustomerId}}',
+                items: [{ itemId: '{{itemId}}', quantity: 99999, unitPrice: 1500 }]
+              }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 201 Created Order Draft", function () { pm.response.to.have.status(201); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("excessOrderId", data.id);'
+                ]
+              }
+            }
+          ]
+        },
+        {
+          name: '15. Verify Over-Reservation 409 Conflict',
+          request: {
+            method: 'POST',
+            header: [
+              { key: 'Authorization', value: 'Bearer {{salesToken}}' },
+              { key: 'Content-Type', value: 'application/json' }
+            ],
+            body: {
+              mode: 'raw',
+              raw: JSON.stringify({ locationId: '{{blrLocationId}}' }, null, 2)
+            },
+            url: { raw: '{{baseUrl}}/orders/{{excessOrderId}}/reserve', host: ['{{baseUrl}}'], path: ['orders', '{{excessOrderId}}', 'reserve'] }
+          },
+          event: [
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 409 Conflict for Over-reservation", function () { pm.response.to.have.status(409); });'
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+const environment = {
+  name: 'Mini Operations ERP Environment',
+  values: [
+    { key: 'baseUrl', value: 'http://localhost:5000/api', enabled: true },
+    { key: 'token', value: '', enabled: true },
+    { key: 'adminToken', value: '', enabled: true },
+    { key: 'operationsToken', value: '', enabled: true },
+    { key: 'salesToken', value: '', enabled: true }
+  ]
+};
+
+const postmanDir = path.join(__dirname);
+if (!fs.existsSync(postmanDir)) {
+  fs.mkdirSync(postmanDir, { recursive: true });
+}
+
+fs.writeFileSync(
+  path.join(postmanDir, 'Mini-Operations-ERP.postman_collection.json'),
+  JSON.stringify(collection, null, 2)
+);
+
+fs.writeFileSync(
+  path.join(postmanDir, 'Mini-Operations-ERP.postman_environment.json'),
+  JSON.stringify(environment, null, 2)
+);
+
+console.log('[Postman Generator] Collection and Environment files generated successfully!');
