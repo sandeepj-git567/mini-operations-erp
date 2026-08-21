@@ -8,9 +8,8 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error('[Error Middleware]', err);
-
   if (err instanceof AppError) {
+    // Expected operational business error (400, 401, 403, 404, 409)
     return res.status(err.statusCode).json({
       error: {
         message: err.message,
@@ -20,6 +19,7 @@ export const errorHandler = (
   }
 
   if (err instanceof ZodError) {
+    // Validation error
     return res.status(400).json({
       error: {
         message: 'Validation failed',
@@ -31,6 +31,9 @@ export const errorHandler = (
       }
     });
   }
+
+  // Unexpected internal server error (500)
+  console.error('[Unhandled Internal Error]', err);
 
   return res.status(500).json({
     error: {

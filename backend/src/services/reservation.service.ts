@@ -45,11 +45,15 @@ export class ReservationService {
         }
 
         // Perform explicit PostgreSQL Row Locking to prevent race conditions during concurrent reservations
-        const lockedInventoryRows: any[] = await tx.$queryRaw`
+        await tx.$queryRaw`
           SELECT * FROM "Inventory" WHERE "id" = ${inv.id} FOR UPDATE
         `;
 
-        const lockedInv = lockedInventoryRows[0] || inv;
+        // Fetch locked inventory record with full Prisma typing
+        const lockedInv = await tx.inventory.findUnique({ where: { id: inv.id } });
+        if (!lockedInv) {
+          throw new NotFoundError('Locked inventory record not found');
+        }
 
         const available = lockedInv.physicalQuantity - lockedInv.reservedQuantity;
         if (item.quantity > available) {
