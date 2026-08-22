@@ -31,7 +31,8 @@ const collection = {
                   'var jsonData = pm.response.json();',
                   'pm.test("Token received", function () { pm.expect(jsonData.token).to.be.a("string"); });',
                   'pm.environment.set("adminToken", jsonData.token);',
-                  'pm.environment.set("token", jsonData.token);'
+                  'pm.environment.set("token", jsonData.token);',
+                  'pm.environment.set("userId", jsonData.user.id);'
                 ]
               }
             }
@@ -56,7 +57,8 @@ const collection = {
                   'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
                   'var jsonData = pm.response.json();',
                   'pm.test("Operations token received", function () { pm.expect(jsonData.token).to.be.a("string"); });',
-                  'pm.environment.set("operationsToken", jsonData.token);'
+                  'pm.environment.set("operationsToken", jsonData.token);',
+                  'pm.environment.set("opsUserId", jsonData.user.id);'
                 ]
               }
             }
@@ -81,7 +83,8 @@ const collection = {
                   'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
                   'var jsonData = pm.response.json();',
                   'pm.test("Sales token received", function () { pm.expect(jsonData.token).to.be.a("string"); });',
-                  'pm.environment.set("salesToken", jsonData.token);'
+                  'pm.environment.set("salesToken", jsonData.token);',
+                  'pm.environment.set("salesUserId", jsonData.user.id);'
                 ]
               }
             }
@@ -127,7 +130,18 @@ const collection = {
                   'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
                   'var jsonData = pm.response.json();',
                   'pm.test("Inventory array returned", function () { pm.expect(jsonData).to.be.an("array"); });',
-                  'if (jsonData.length > 0) { pm.environment.set("inventoryId", jsonData[0].id); pm.environment.set("itemId", jsonData[0].itemId); pm.environment.set("locationId", jsonData[0].locationId); }'
+                  'if (jsonData.length > 0) {',
+                  '  pm.environment.set("inventoryId", jsonData[0].id);',
+                  '  pm.environment.set("itemId", jsonData[0].itemId);',
+                  '  pm.environment.set("locationId", jsonData[0].locationId);',
+                  '  pm.environment.set("blrLocationId", jsonData[0].locationId);',
+                  '  var otherLoc = jsonData.find(function(i) { return i.locationId !== jsonData[0].locationId; });',
+                  '  if (otherLoc) {',
+                  '    pm.environment.set("maaLocationId", otherLoc.locationId);',
+                  '    pm.environment.set("sourceLocationId", otherLoc.locationId);',
+                  '    pm.environment.set("destinationLocationId", jsonData[0].locationId);',
+                  '  }',
+                  '}'
                 ]
               }
             }
@@ -355,7 +369,10 @@ const collection = {
             {
               listen: 'test',
               script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'pm.environment.set("dispatchedTransferId", pm.environment.get("transferId"));'
+                ]
               }
             }
           ]
@@ -371,7 +388,10 @@ const collection = {
             {
               listen: 'test',
               script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });',
+                  'pm.environment.set("receivedTransferId", pm.environment.get("transferId"));'
+                ]
               }
             }
           ]
@@ -403,6 +423,26 @@ const collection = {
         },
         {
           name: 'Create Customer',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  'pm.environment.set("randomCustomerEmail", "customer." + Date.now() + "@example.com");'
+                ]
+              }
+            },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("customerId", jsonData.id);'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -414,24 +454,12 @@ const collection = {
               raw: JSON.stringify({
                 name: 'Postman Test Customer',
                 phone: '+91 9999999999',
-                email: 'postman.test@customer.com',
+                email: '{{randomCustomerEmail}}',
                 companyName: 'Postman Global Corp'
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
-                  'var jsonData = pm.response.json();',
-                  'pm.environment.set("customerId", jsonData.id);'
-                ]
-              }
-            }
-          ]
+          }
         }
       ]
     },
@@ -572,6 +600,33 @@ const collection = {
       item: [
         {
           name: 'Attempt Over-Reservation (409 Conflict)',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  'if (!pm.environment.get("overReserveOrderId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/orders",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("salesToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ customerId: pm.environment.get("customerId"), items: [{ itemId: pm.environment.get("itemId"), quantity: 999999, unitPrice: 1000 }] }) }',
+                  '  }, function (err, res) {',
+                  '    if (res && res.code === 201) { pm.environment.set("overReserveOrderId", res.json().id); }',
+                  '  });',
+                  '}'
+                ]
+              }
+            },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -583,17 +638,7 @@ const collection = {
               raw: JSON.stringify({ locationId: '{{locationId}}' }, null, 2)
             },
             url: { raw: '{{baseUrl}}/orders/{{overReserveOrderId}}/reserve', host: ['{{baseUrl}}'], path: ['orders', '{{overReserveOrderId}}', 'reserve'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });'
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Attempt Transfer More Than Available (409 Conflict)',
@@ -625,35 +670,55 @@ const collection = {
         },
         {
           name: 'Attempt Duplicate Dispatch (409 Conflict)',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  'if (!pm.environment.get("dispatchedTransferId")) {',
+                  '  pm.environment.set("dispatchedTransferId", pm.environment.get("transferId"));',
+                  '}'
+                ]
+              }
+            },
+            {
+              listen: 'test',
+              script: {
+                exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
             url: { raw: '{{baseUrl}}/transfers/{{dispatchedTransferId}}/dispatch', host: ['{{baseUrl}}'], path: ['transfers', '{{dispatchedTransferId}}', 'dispatch'] }
-          },
+          }
+        },
+        {
+          name: 'Attempt Duplicate Receive (409 Conflict)',
           event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  'if (!pm.environment.get("receivedTransferId")) {',
+                  '  pm.environment.set("receivedTransferId", pm.environment.get("transferId"));',
+                  '}'
+                ]
+              }
+            },
             {
               listen: 'test',
               script: {
                 exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
               }
             }
-          ]
-        },
-        {
-          name: 'Attempt Duplicate Receive (409 Conflict)',
+          ],
           request: {
             method: 'POST',
             header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
             url: { raw: '{{baseUrl}}/transfers/{{receivedTransferId}}/receive', host: ['{{baseUrl}}'], path: ['transfers', '{{receivedTransferId}}', 'receive'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Invalid Negative Quantity (400 Bad Request)',
@@ -734,7 +799,8 @@ const collection = {
                 exec: [
                   'pm.test("Status code 200", function () { pm.response.to.have.status(200); });',
                   'var data = pm.response.json();',
-                  'pm.environment.set("adminToken", data.token);'
+                  'pm.environment.set("adminToken", data.token);',
+                  'pm.environment.set("userId", data.user.id);'
                 ]
               }
             }
@@ -756,7 +822,14 @@ const collection = {
                   'var data = pm.response.json();',
                   'if (data.length > 0) {',
                   '  pm.environment.set("itemId", data[0].itemId);',
+                  '  pm.environment.set("locationId", data[0].locationId);',
                   '  pm.environment.set("blrLocationId", data[0].locationId);',
+                  '  var otherLoc = data.find(function(i) { return i.locationId !== data[0].locationId; });',
+                  '  if (otherLoc) {',
+                  '    pm.environment.set("maaLocationId", otherLoc.locationId);',
+                  '    pm.environment.set("sourceLocationId", otherLoc.locationId);',
+                  '    pm.environment.set("destinationLocationId", data[0].locationId);',
+                  '  }',
                   '}'
                 ]
               }
@@ -826,10 +899,10 @@ const collection = {
             body: {
               mode: 'raw',
               raw: JSON.stringify({
-                sourceLocationId: '{{maaLocationId}}',
-                destinationLocationId: '{{blrLocationId}}',
+                sourceLocationId: '{{sourceLocationId}}',
+                destinationLocationId: '{{destinationLocationId}}',
                 itemId: '{{itemId}}',
-                quantity: 20
+                quantity: 10
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
@@ -937,6 +1010,26 @@ const collection = {
         },
         {
           name: '11. Create Customer',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  'pm.environment.set("randomFlowCustomerEmail", "flow.customer." + Date.now() + "@example.com");'
+                ]
+              }
+            },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code 201", function () { pm.response.to.have.status(201); });',
+                  'var data = pm.response.json();',
+                  'pm.environment.set("flowCustomerId", data.id);'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -948,24 +1041,12 @@ const collection = {
               raw: JSON.stringify({
                 name: 'Business Flow Customer',
                 phone: '+91 9123456789',
-                email: 'flow.customer@example.com',
+                email: '{{randomFlowCustomerEmail}}',
                 companyName: 'Flow Tech Industries'
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code 201", function () { pm.response.to.have.status(201); });',
-                  'var data = pm.response.json();',
-                  'pm.environment.set("flowCustomerId", data.id);'
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           name: '12. Create Customer Order',
@@ -979,7 +1060,7 @@ const collection = {
               mode: 'raw',
               raw: JSON.stringify({
                 customerId: '{{flowCustomerId}}',
-                items: [{ itemId: '{{itemId}}', quantity: 10, unitPrice: 1500 }]
+                items: [{ itemId: '{{itemId}}', quantity: 5, unitPrice: 1500 }]
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
@@ -1044,7 +1125,8 @@ const collection = {
                 exec: [
                   'pm.test("Status code 201 Created Order Draft", function () { pm.response.to.have.status(201); });',
                   'var data = pm.response.json();',
-                  'pm.environment.set("excessOrderId", data.id);'
+                  'pm.environment.set("excessOrderId", data.id);',
+                  'pm.environment.set("overReserveOrderId", data.id);'
                 ]
               }
             }
@@ -1087,7 +1169,8 @@ const environment = {
     { key: 'token', value: '', enabled: true },
     { key: 'adminToken', value: '', enabled: true },
     { key: 'operationsToken', value: '', enabled: true },
-    { key: 'salesToken', value: '', enabled: true }
+    { key: 'salesToken', value: '', enabled: true },
+    { key: 'userId', value: '', enabled: true }
   ]
 };
 
