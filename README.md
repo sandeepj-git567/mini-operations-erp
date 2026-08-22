@@ -9,8 +9,9 @@ A production-grade, real-time **Mini Operations ERP** system built with Next.js 
 - **Live Frontend App (Vercel)**: [https://mini-operations-erp-frontend.vercel.app](https://mini-operations-erp-frontend.vercel.app)
 - **Live Backend API (Render)**: [https://mini-operations-erp-backend-l7sh.onrender.com/api](https://mini-operations-erp-backend-l7sh.onrender.com/api)
 - **Interactive Swagger API Docs**: [https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/](https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/)
-- **Live Postman Public Workspace**: [Postman Collection Run & Environment](https://sandeep-4675570.postman.co/workspace/mini-operations-erp/run/44214802-92002543-85ff-474c-9125-3d1f56d4458d?action=share&creator=44214802&active-environment=44214802-4e272975-6ee4-462e-8961-6ba1a1a31f37)
+- **Live Postman Public Workspace**: [Postman Collection Run & Environment](https://sandeep-4675570.postman.co/workspace/mini-operations-erp/run/44214802-9182537c-7f6b-401d-b24a-dc4f09c2c4e5?action=share&creator=44214802&active-environment=44214802-4e272975-6ee4-462e-8961-6ba1a1a31f37)
 - **GitHub Repository**: [https://github.com/sandeepj-git567/mini-operations-erp](https://github.com/sandeepj-git567/mini-operations-erp)
+- **Loom Video Demo**: [Watch the 5-minute Walkthrough](https://www.loom.com/share/7c7ed9a60d844a91bf2ee5117b44f4a9)
 - **Video Walkthrough Artifact**: See [`walkthrough.md`](./walkthrough.md) with embedded animation video (`docs/mini_operations_erp_walkthrough.webp`).
 
 ---
