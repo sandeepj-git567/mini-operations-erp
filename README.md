@@ -1,6 +1,17 @@
 # Mini Operations ERP
 
-A production-grade, real-time **Mini Operations ERP** system built with Next.js, Express.js (TypeScript), Prisma ORM, Supabase PostgreSQL, and Socket.io.
+A production-grade, real-time **Mini Operations ERP** system built with Next.js 14, Express.js (TypeScript), Prisma ORM, Supabase PostgreSQL, and Socket.io.
+
+---
+
+## 🌐 Live Production Deployment & Links
+
+- **Live Frontend App (Vercel)**: [https://mini-operations-erp-frontend.vercel.app](https://mini-operations-erp-frontend.vercel.app)
+- **Live Backend API (Render)**: [https://mini-operations-erp-backend-l7sh.onrender.com/api](https://mini-operations-erp-backend-l7sh.onrender.com/api)
+- **Interactive Swagger API Docs**: [https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/](https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/)
+- **Live Postman Public Workspace**: [Postman Collection Run & Environment](https://sandeep-4675570.postman.co/workspace/mini-operations-erp/run/44214802-92002543-85ff-474c-9125-3d1f56d4458d?action=share&creator=44214802&active-environment=44214802-4e272975-6ee4-462e-8961-6ba1a1a31f37)
+- **GitHub Repository**: [https://github.com/sandeepj-git567/mini-operations-erp](https://github.com/sandeepj-git567/mini-operations-erp)
+- **Video Walkthrough Artifact**: See [`walkthrough.md`](./walkthrough.md) with embedded animation video (`docs/mini_operations_erp_walkthrough.webp`).
 
 ---
 
@@ -24,10 +35,10 @@ POSTGRESQL ATOMIC STOCK RESERVATION
 
 ## 🛠 Tech Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS, Lucide Icons, Socket.io Client.
+- **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Lucide Icons, Socket.io Client.
 - **Backend**: Node.js, Express.js, TypeScript, Prisma ORM, Zod Validation, JWT Authentication, bcryptjs, Socket.io Server, Swagger UI (`swagger-ui-express`).
 - **Database**: PostgreSQL (Hosted on **Supabase**).
-- **Testing**: Jest, Supertest.
+- **Testing**: Jest, Supertest, Newman CLI.
 - **API Documentation**: OpenAPI 3.0 / Swagger (`/api/docs`) & Auto-generated Postman Collection (`/postman`).
 
 ---
@@ -62,18 +73,38 @@ The application guarantees inventory integrity under high-concurrency race condi
 ## 📡 Real-Time Synchronized Architecture
 
 - **Socket.io Layer**: Connected clients receive instant WebSocket payloads whenever stock levels adjust, transfers change status, or customer orders reserve stock.
-- **No Page Refresh Needed**: Connected browser windows update inventory tables and status badges in real-time.
-- **Live Status Indicator**: A pulsing green badge in the navigation bar indicates active Socket.io connection.
+- **Multi-User Live Sync**: Open two browser windows (e.g., Admin and Sales) side-by-side to witness real-time stock deductions and badge status updates without refreshing the page!
+- **Live Status Indicator**: A pulsing green badge in the navigation bar indicates active Socket.io connection (`Connected`).
+
+---
+
+## 🧪 Automated Testing
+
+### 1. Backend Jest Test Suite
+```bash
+cd backend
+npm test
+```
+Executes 10 comprehensive tests covering:
+- Authentication & JWT token generation
+- Role-based authorization enforcement (HTTP 403)
+- Inventory stock adjustments
+- Transfer state machine & duplicate action prevention (HTTP 409)
+- Over-reservation rejection (HTTP 409)
+- Order cancellation and reserved stock release
+- Concurrent stock reservation race conditions
+
+### 2. Newman Postman Test Suite
+```bash
+npx newman run postman/Mini-Operations-ERP.postman_collection.json -e postman/Mini-Operations-ERP.postman_environment.json
+```
+Executes **47 API requests and 52 test assertions** with **100% PASS** results.
 
 ---
 
 ## ⚡ Local Setup Instructions
 
-### 1. Prerequisites
-- Node.js v18+ & npm
-- PostgreSQL Database or Supabase URL
-
-### 2. Environment Configuration
+### 1. Environment Configuration
 
 Create `backend/.env`:
 ```env
@@ -89,7 +120,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 ```
 
-### 3. Database Migration & Seeding
+### 2. Database Migration & Seeding
 
 ```bash
 # Navigate to backend
@@ -105,63 +136,33 @@ npx prisma db push
 npm run seed
 ```
 
-### 4. Run Backend Server
+### 3. Run Backend Server
 
 ```bash
-# Start backend dev server on http://localhost:5000
 npm run dev
 ```
 - **Swagger Documentation**: [http://localhost:5000/api/docs](http://localhost:5000/api/docs)
 - **Health Check**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
 
-### 5. Run Frontend Application
+### 4. Run Frontend Application
 
 ```bash
-# Navigate to frontend in a new terminal
 cd ../frontend
-
-# Install dependencies
-npm install
-
-# Start Next.js dev server on http://localhost:3000
 npm run dev
 ```
 Access the UI at [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 🧪 Running Automated Tests
-
-```bash
-cd backend
-npm test
-```
-The Jest test suite executes 10 comprehensive tests covering:
-- Authentication & JWT token generation
-- Role-based authorization enforcement (HTTP 403)
-- Inventory stock adjustments
-- Transfer state machine & duplicate action prevention (HTTP 409)
-- Over-reservation rejection (HTTP 409)
-- Order cancellation and reserved stock release
-- Concurrent stock reservation race conditions
-
----
-
 ## 📮 Postman Collection & Environment
 
-The project includes an automated generator script that builds the complete Postman collection and environment based on actual implemented API routes:
-
+Automated generator script:
 ```bash
-# Generate Postman files
 node postman/generate_postman.js
 ```
 
-Generated files:
-- `postman/Mini-Operations-ERP.postman_collection.json`
-- `postman/Mini-Operations-ERP.postman_environment.json`
-
-### Included Folders:
-1. **Authentication** (Login Admin, Operations, Sales - automatically saves `adminToken`, `operationsToken`, `salesToken`)
+Included Folders:
+1. **Authentication** (Login Admin, Operations, Sales - auto-saves JWT tokens)
 2. **Inventory** (Get Inventory, Single Item, Adjust Stock, Transactions)
 3. **Work Orders** (List, Create, Get, Update Status)
 4. **Transfers** (List, Create, Dispatch, Receive)
@@ -175,12 +176,4 @@ Generated files:
 
 ## 📐 ER Diagram & Database Schema
 
-Detailed Entity-Relationship Diagram is located in [docs/ER-DIAGRAM.md](file:///d:/mini-operations-erp/docs/ER-DIAGRAM.md).
-
----
-
-## ☁ Deployment Instructions
-
-- **Frontend**: Deploy to **Vercel** (`NEXT_PUBLIC_API_URL` pointing to Render backend).
-- **Backend**: Deploy to **Render** (`PORT=5000`, `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`).
-- **Database**: Hosted on **Supabase PostgreSQL**.
+Detailed Entity-Relationship Diagram is located in [docs/ER-DIAGRAM.md](./docs/ER-DIAGRAM.md).
