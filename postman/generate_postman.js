@@ -1,6 +1,81 @@
 const fs = require('fs');
 const path = require('path');
 
+const autoAuthPreRequest = [
+  'if (!pm.environment.get("adminToken") || !pm.environment.get("userId")) {',
+  '  pm.sendRequest({',
+  '    url: pm.environment.get("baseUrl") + "/auth/login",',
+  '    method: "POST",',
+  '    header: { "Content-Type": "application/json" },',
+  '    body: { mode: "raw", raw: JSON.stringify({ email: "admin@example.com", password: "Password123!" }) }',
+  '  }, function (err, res) {',
+  '    if (res && res.code === 200) {',
+  '      var data = res.json();',
+  '      pm.environment.set("adminToken", data.token);',
+  '      pm.environment.set("token", data.token);',
+  '      pm.environment.set("userId", data.user.id);',
+  '    }',
+  '  });',
+  '}',
+  'if (!pm.environment.get("itemId") || !pm.environment.get("locationId")) {',
+  '  pm.sendRequest({',
+  '    url: pm.environment.get("baseUrl") + "/inventory",',
+  '    method: "GET",',
+  '    header: { "Authorization": "Bearer " + (pm.environment.get("adminToken") || "") }',
+  '  }, function (err, res) {',
+  '    if (res && res.code === 200) {',
+  '      var data = res.json();',
+  '      if (data.length > 0) {',
+  '        pm.environment.set("inventoryId", data[0].id);',
+  '        pm.environment.set("itemId", data[0].itemId);',
+  '        pm.environment.set("locationId", data[0].locationId);',
+  '        pm.environment.set("blrLocationId", data[0].locationId);',
+  '        var otherLoc = data.find(function(i) { return i.locationId !== data[0].locationId; });',
+  '        if (otherLoc) {',
+  '          pm.environment.set("maaLocationId", otherLoc.locationId);',
+  '          pm.environment.set("sourceLocationId", otherLoc.locationId);',
+  '          pm.environment.set("destinationLocationId", data[0].locationId);',
+  '        }',
+  '      }',
+  '    }',
+  '  });',
+  '}'
+];
+
+const autoOpsPreRequest = [
+  'if (!pm.environment.get("operationsToken")) {',
+  '  pm.sendRequest({',
+  '    url: pm.environment.get("baseUrl") + "/auth/login",',
+  '    method: "POST",',
+  '    header: { "Content-Type": "application/json" },',
+  '    body: { mode: "raw", raw: JSON.stringify({ email: "operations@example.com", password: "Password123!" }) }',
+  '  }, function (err, res) {',
+  '    if (res && res.code === 200) {',
+  '      var data = res.json();',
+  '      pm.environment.set("operationsToken", data.token);',
+  '      pm.environment.set("opsUserId", data.user.id);',
+  '    }',
+  '  });',
+  '}'
+];
+
+const autoSalesPreRequest = [
+  'if (!pm.environment.get("salesToken")) {',
+  '  pm.sendRequest({',
+  '    url: pm.environment.get("baseUrl") + "/auth/login",',
+  '    method: "POST",',
+  '    header: { "Content-Type": "application/json" },',
+  '    body: { mode: "raw", raw: JSON.stringify({ email: "sales@example.com", password: "Password123!" }) }',
+  '  }, function (err, res) {',
+  '    if (res && res.code === 200) {',
+  '      var data = res.json();',
+  '      pm.environment.set("salesToken", data.token);',
+  '      pm.environment.set("salesUserId", data.user.id);',
+  '    }',
+  '  });',
+  '}'
+];
+
 const collection = {
   info: {
     name: 'Mini Operations ERP',
@@ -92,12 +167,8 @@ const collection = {
         },
         {
           name: 'Get Current User',
-          request: {
-            method: 'GET',
-            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
-            url: { raw: '{{baseUrl}}/auth/me', host: ['{{baseUrl}}'], path: ['auth', 'me'] }
-          },
           event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
             {
               listen: 'test',
               script: {
@@ -108,7 +179,12 @@ const collection = {
                 ]
               }
             }
-          ]
+          ],
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/auth/me', host: ['{{baseUrl}}'], path: ['auth', 'me'] }
+          }
         }
       ]
     },
@@ -117,12 +193,8 @@ const collection = {
       item: [
         {
           name: 'Get All Inventory',
-          request: {
-            method: 'GET',
-            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
-            url: { raw: '{{baseUrl}}/inventory', host: ['{{baseUrl}}'], path: ['inventory'] }
-          },
           event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
             {
               listen: 'test',
               script: {
@@ -145,16 +217,17 @@ const collection = {
                 ]
               }
             }
-          ]
-        },
-        {
-          name: 'Get Single Inventory Item',
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
-            url: { raw: '{{baseUrl}}/inventory/{{inventoryId}}', host: ['{{baseUrl}}'], path: ['inventory', '{{inventoryId}}'] }
-          },
+            url: { raw: '{{baseUrl}}/inventory', host: ['{{baseUrl}}'], path: ['inventory'] }
+          }
+        },
+        {
+          name: 'Get Single Inventory Item',
           event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
             {
               listen: 'test',
               script: {
@@ -163,10 +236,26 @@ const collection = {
                 ]
               }
             }
-          ]
+          ],
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
+            url: { raw: '{{baseUrl}}/inventory/{{inventoryId}}', host: ['{{baseUrl}}'], path: ['inventory', '{{inventoryId}}'] }
+          }
         },
         {
           name: 'Adjust Stock',
+          event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -183,8 +272,12 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/inventory/adjust', host: ['{{baseUrl}}'], path: ['inventory', 'adjust'] }
-          },
+          }
+        },
+        {
+          name: 'Get Inventory Transactions',
           event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
             {
               listen: 'test',
               script: {
@@ -193,25 +286,12 @@ const collection = {
                 ]
               }
             }
-          ]
-        },
-        {
-          name: 'Get Inventory Transactions',
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
             url: { raw: '{{baseUrl}}/inventory/{{inventoryId}}/transactions', host: ['{{baseUrl}}'], path: ['inventory', '{{inventoryId}}', 'transactions'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'
-                ]
-              }
-            }
-          ]
+          }
         }
       ]
     },
@@ -220,22 +300,31 @@ const collection = {
       item: [
         {
           name: 'List Work Orders',
+          event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
             url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Create Work Order',
+          event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("workOrderId", jsonData.id);'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -252,38 +341,56 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
-                  'var jsonData = pm.response.json();',
-                  'pm.environment.set("workOrderId", jsonData.id);'
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Get Work Order by ID',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("workOrderId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/work-orders",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("adminToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ locationId: pm.environment.get("locationId"), itemId: pm.environment.get("itemId"), requiredQuantity: 10, assignedUserId: pm.environment.get("userId") }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("workOrderId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{adminToken}}' }],
             url: { raw: '{{baseUrl}}/work-orders/{{workOrderId}}', host: ['{{baseUrl}}'], path: ['work-orders', '{{workOrderId}}'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Update Work Order Status',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("workOrderId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/work-orders",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("adminToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ locationId: pm.environment.get("locationId"), itemId: pm.environment.get("itemId"), requiredQuantity: 10, assignedUserId: pm.environment.get("userId") }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("workOrderId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'PATCH',
             header: [
@@ -295,15 +402,7 @@ const collection = {
               raw: JSON.stringify({ status: 'IN_PROGRESS' }, null, 2)
             },
             url: { raw: '{{baseUrl}}/work-orders/{{workOrderId}}/status', host: ['{{baseUrl}}'], path: ['work-orders', '{{workOrderId}}', 'status'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         }
       ]
     },
@@ -312,22 +411,31 @@ const collection = {
       item: [
         {
           name: 'List Transfers',
+          event: [
+            { listen: 'prerequest', script: { exec: autoOpsPreRequest } },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
             url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Create Transfer',
+          event: [
+            { listen: 'prerequest', script: { exec: [...autoOpsPreRequest, ...autoAuthPreRequest] } },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("transferId", jsonData.id);'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -344,28 +452,28 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
-                  'var jsonData = pm.response.json();',
-                  'pm.environment.set("transferId", jsonData.id);'
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Dispatch Transfer',
-          request: {
-            method: 'POST',
-            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
-            url: { raw: '{{baseUrl}}/transfers/{{transferId}}/dispatch', host: ['{{baseUrl}}'], path: ['transfers', '{{transferId}}', 'dispatch'] }
-          },
           event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoOpsPreRequest,
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("transferId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/transfers",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("operationsToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ sourceLocationId: pm.environment.get("sourceLocationId"), destinationLocationId: pm.environment.get("destinationLocationId"), itemId: pm.environment.get("itemId"), quantity: 5 }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("transferId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
             {
               listen: 'test',
               script: {
@@ -375,16 +483,39 @@ const collection = {
                 ]
               }
             }
-          ]
-        },
-        {
-          name: 'Receive Transfer',
+          ],
           request: {
             method: 'POST',
             header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
-            url: { raw: '{{baseUrl}}/transfers/{{transferId}}/receive', host: ['{{baseUrl}}'], path: ['transfers', '{{transferId}}', 'receive'] }
-          },
+            url: { raw: '{{baseUrl}}/transfers/{{transferId}}/dispatch', host: ['{{baseUrl}}'], path: ['transfers', '{{transferId}}', 'dispatch'] }
+          }
+        },
+        {
+          name: 'Receive Transfer',
           event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoOpsPreRequest,
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("dispatchedTransferId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/transfers",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("operationsToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ sourceLocationId: pm.environment.get("sourceLocationId"), destinationLocationId: pm.environment.get("destinationLocationId"), itemId: pm.environment.get("itemId"), quantity: 5 }) }',
+                  '  }, function (err, res) {',
+                  '    if (res && res.code === 201) {',
+                  '      var tid = res.json().id;',
+                  '      pm.environment.set("transferId", tid);',
+                  '      pm.sendRequest({ url: pm.environment.get("baseUrl") + "/transfers/" + tid + "/dispatch", method: "POST", header: { "Authorization": "Bearer " + pm.environment.get("operationsToken") } }, function() { pm.environment.set("dispatchedTransferId", tid); });',
+                  '    }',
+                  '  });',
+                  '}'
+                ]
+              }
+            },
             {
               listen: 'test',
               script: {
@@ -394,7 +525,12 @@ const collection = {
                 ]
               }
             }
-          ]
+          ],
+          request: {
+            method: 'POST',
+            header: [{ key: 'Authorization', value: 'Bearer {{operationsToken}}' }],
+            url: { raw: '{{baseUrl}}/transfers/{{transferId}}/receive', host: ['{{baseUrl}}'], path: ['transfers', '{{transferId}}', 'receive'] }
+          }
         }
       ]
     },
@@ -403,12 +539,8 @@ const collection = {
       item: [
         {
           name: 'List Customers',
-          request: {
-            method: 'GET',
-            header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
-            url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
-          },
           event: [
+            { listen: 'prerequest', script: { exec: autoSalesPreRequest } },
             {
               listen: 'test',
               script: {
@@ -419,7 +551,12 @@ const collection = {
                 ]
               }
             }
-          ]
+          ],
+          request: {
+            method: 'GET',
+            header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
+            url: { raw: '{{baseUrl}}/customers', host: ['{{baseUrl}}'], path: ['customers'] }
+          }
         },
         {
           name: 'Create Customer',
@@ -428,6 +565,7 @@ const collection = {
               listen: 'prerequest',
               script: {
                 exec: [
+                  ...autoSalesPreRequest,
                   'pm.environment.set("randomCustomerEmail", "customer." + Date.now() + "@example.com");'
                 ]
               }
@@ -468,22 +606,47 @@ const collection = {
       item: [
         {
           name: 'List Customer Orders',
+          event: [
+            { listen: 'prerequest', script: { exec: autoSalesPreRequest } },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
             url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Create Order',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoSalesPreRequest,
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("customerId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/customers",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("salesToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ name: "Auto Cust", phone: "+91 9999999999", email: "cust." + Date.now() + "@example.com", companyName: "Auto Corp" }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("customerId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
+            {
+              listen: 'test',
+              script: {
+                exec: [
+                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
+                  'var jsonData = pm.response.json();',
+                  'pm.environment.set("orderId", jsonData.id);'
+                ]
+              }
+            }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -500,38 +663,58 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/orders', host: ['{{baseUrl}}'], path: ['orders'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: [
-                  'pm.test("Status code is 201 Created", function () { pm.response.to.have.status(201); });',
-                  'var jsonData = pm.response.json();',
-                  'pm.environment.set("orderId", jsonData.id);'
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Get Order by ID',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoSalesPreRequest,
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("orderId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/orders",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("salesToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ customerId: pm.environment.get("customerId"), items: [{ itemId: pm.environment.get("itemId"), quantity: 1, unitPrice: 1000 }] }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("orderId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'GET',
             header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
             url: { raw: '{{baseUrl}}/orders/{{orderId}}', host: ['{{baseUrl}}'], path: ['orders', '{{orderId}}'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Reserve Stock',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoSalesPreRequest,
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("orderId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/orders",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("salesToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ customerId: pm.environment.get("customerId"), items: [{ itemId: pm.environment.get("itemId"), quantity: 1, unitPrice: 1000 }] }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("orderId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -543,31 +726,35 @@ const collection = {
               raw: JSON.stringify({ locationId: '{{locationId}}' }, null, 2)
             },
             url: { raw: '{{baseUrl}}/orders/{{orderId}}/reserve', host: ['{{baseUrl}}'], path: ['orders', '{{orderId}}', 'reserve'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Cancel Order',
+          event: [
+            {
+              listen: 'prerequest',
+              script: {
+                exec: [
+                  ...autoSalesPreRequest,
+                  ...autoAuthPreRequest,
+                  'if (!pm.environment.get("orderId")) {',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/orders",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("salesToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ customerId: pm.environment.get("customerId"), items: [{ itemId: pm.environment.get("itemId"), quantity: 1, unitPrice: 1000 }] }) }',
+                  '  }, function (err, res) { if (res && res.code === 201) { pm.environment.set("orderId", res.json().id); } });',
+                  '}'
+                ]
+              }
+            },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });'] } }
+          ],
           request: {
             method: 'POST',
             header: [{ key: 'Authorization', value: 'Bearer {{salesToken}}' }],
             url: { raw: '{{baseUrl}}/orders/{{orderId}}/cancel', host: ['{{baseUrl}}'], path: ['orders', '{{orderId}}', 'cancel'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 200 OK", function () { pm.response.to.have.status(200); });']
-              }
-            }
-          ]
+          }
         }
       ]
     },
@@ -605,6 +792,8 @@ const collection = {
               listen: 'prerequest',
               script: {
                 exec: [
+                  ...autoSalesPreRequest,
+                  ...autoAuthPreRequest,
                   'if (!pm.environment.get("overReserveOrderId")) {',
                   '  pm.sendRequest({',
                   '    url: pm.environment.get("baseUrl") + "/orders",',
@@ -642,6 +831,10 @@ const collection = {
         },
         {
           name: 'Attempt Transfer More Than Available (409 Conflict)',
+          event: [
+            { listen: 'prerequest', script: { exec: [...autoOpsPreRequest, ...autoAuthPreRequest] } },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });'] } }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -658,15 +851,7 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/transfers', host: ['{{baseUrl}}'], path: ['transfers'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 409 Conflict", function () { pm.response.to.have.status(409); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Attempt Duplicate Dispatch (409 Conflict)',
@@ -675,8 +860,20 @@ const collection = {
               listen: 'prerequest',
               script: {
                 exec: [
+                  ...autoOpsPreRequest,
+                  ...autoAuthPreRequest,
                   'if (!pm.environment.get("dispatchedTransferId")) {',
-                  '  pm.environment.set("dispatchedTransferId", pm.environment.get("transferId"));',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/transfers",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("operationsToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ sourceLocationId: pm.environment.get("sourceLocationId"), destinationLocationId: pm.environment.get("destinationLocationId"), itemId: pm.environment.get("itemId"), quantity: 5 }) }',
+                  '  }, function (err, res) {',
+                  '    if (res && res.code === 201) {',
+                  '      var tid = res.json().id;',
+                  '      pm.sendRequest({ url: pm.environment.get("baseUrl") + "/transfers/" + tid + "/dispatch", method: "POST", header: { "Authorization": "Bearer " + pm.environment.get("operationsToken") } }, function() { pm.environment.set("dispatchedTransferId", tid); });',
+                  '    }',
+                  '  });',
                   '}'
                 ]
               }
@@ -701,8 +898,22 @@ const collection = {
               listen: 'prerequest',
               script: {
                 exec: [
+                  ...autoOpsPreRequest,
+                  ...autoAuthPreRequest,
                   'if (!pm.environment.get("receivedTransferId")) {',
-                  '  pm.environment.set("receivedTransferId", pm.environment.get("transferId"));',
+                  '  pm.sendRequest({',
+                  '    url: pm.environment.get("baseUrl") + "/transfers",',
+                  '    method: "POST",',
+                  '    header: { "Content-Type": "application/json", "Authorization": "Bearer " + pm.environment.get("operationsToken") },',
+                  '    body: { mode: "raw", raw: JSON.stringify({ sourceLocationId: pm.environment.get("sourceLocationId"), destinationLocationId: pm.environment.get("destinationLocationId"), itemId: pm.environment.get("itemId"), quantity: 5 }) }',
+                  '  }, function (err, res) {',
+                  '    if (res && res.code === 201) {',
+                  '      var tid = res.json().id;',
+                  '      pm.sendRequest({ url: pm.environment.get("baseUrl") + "/transfers/" + tid + "/dispatch", method: "POST", header: { "Authorization": "Bearer " + pm.environment.get("operationsToken") } }, function() {',
+                  '        pm.sendRequest({ url: pm.environment.get("baseUrl") + "/transfers/" + tid + "/receive", method: "POST", header: { "Authorization": "Bearer " + pm.environment.get("operationsToken") } }, function() { pm.environment.set("receivedTransferId", tid); });',
+                  '      });',
+                  '    }',
+                  '  });',
                   '}'
                 ]
               }
@@ -722,6 +933,10 @@ const collection = {
         },
         {
           name: 'Invalid Negative Quantity (400 Bad Request)',
+          event: [
+            { listen: 'prerequest', script: { exec: autoAuthPreRequest } },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 400 Bad Request", function () { pm.response.to.have.status(400); });'] } }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -738,18 +953,14 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 400 Bad Request", function () { pm.response.to.have.status(400); });']
-              }
-            }
-          ]
+          }
         },
         {
           name: 'Unauthorized Role Access (403 Forbidden)',
+          event: [
+            { listen: 'prerequest', script: { exec: [...autoSalesPreRequest, ...autoAuthPreRequest] } },
+            { listen: 'test', script: { exec: ['pm.test("Status code is 403 Forbidden", function () { pm.response.to.have.status(403); });'] } }
+          ],
           request: {
             method: 'POST',
             header: [
@@ -766,15 +977,7 @@ const collection = {
               }, null, 2)
             },
             url: { raw: '{{baseUrl}}/work-orders', host: ['{{baseUrl}}'], path: ['work-orders'] }
-          },
-          event: [
-            {
-              listen: 'test',
-              script: {
-                exec: ['pm.test("Status code is 403 Forbidden", function () { pm.response.to.have.status(403); });']
-              }
-            }
-          ]
+          }
         }
       ]
     },
@@ -1189,4 +1392,4 @@ fs.writeFileSync(
   JSON.stringify(environment, null, 2)
 );
 
-console.log('[Postman Generator] Collection and Environment files generated successfully!');
+console.log('[Postman Generator] Collection and Environment files generated successfully with Self-Healing Pre-Requests!');
