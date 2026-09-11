@@ -1,9 +1,10 @@
 node_modules
 dist
-.next
 .env
 .env.*
 !.env.example
-*.log
 coverage
-
+tests
+*.log
+.git
+.gitignore

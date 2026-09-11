@@ -72,7 +72,9 @@ export class TransferService {
   }
 
   static async dispatchTransfer(id: string, createdBy: string) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const pendingEvents: { event: string; payload: any }[] = [];
+
+    const updatedTransfer = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const transfer = await tx.transfer.findUnique({
         where: { id },
         include: {
@@ -98,7 +100,6 @@ export class TransferService {
         throw new ValidationError(`Invalid transfer status for dispatch: ${transfer.status}`);
       }
 
-      // Check source inventory available stock
       const sourceInv = await tx.inventory.findUnique({
         where: { itemId_locationId: { itemId: transfer.itemId, locationId: transfer.sourceLocationId } }
       });
@@ -110,13 +111,11 @@ export class TransferService {
         );
       }
 
-      // Decrease source physical stock
       const updatedSourceInv = await tx.inventory.update({
         where: { id: sourceInv.id },
         data: { physicalQuantity: sourceInv.physicalQuantity - transfer.quantity }
       });
 
-      // Create InventoryTransaction for source
       await tx.inventoryTransaction.create({
         data: {
           inventoryId: sourceInv.id,
@@ -129,8 +128,7 @@ export class TransferService {
         }
       });
 
-      // Update transfer status
-      const updatedTransfer = await tx.transfer.update({
+      const dispatched = await tx.transfer.update({
         where: { id },
         data: {
           status: TransferStatus.DISPATCHED,
@@ -143,19 +141,28 @@ export class TransferService {
         }
       });
 
-      // Broadcast real-time events
-      broadcastEvent('TRANSFER_DISPATCHED', updatedTransfer);
-      broadcastEvent('INVENTORY_UPDATED', {
-        ...updatedSourceInv,
-        availableQuantity: updatedSourceInv.physicalQuantity - updatedSourceInv.reservedQuantity
+      pendingEvents.push({ event: 'TRANSFER_DISPATCHED', payload: dispatched });
+      pendingEvents.push({
+        event: 'INVENTORY_UPDATED',
+        payload: {
+          ...updatedSourceInv,
+          availableQuantity: updatedSourceInv.physicalQuantity - updatedSourceInv.reservedQuantity
+        }
       });
 
-      return updatedTransfer;
+      return dispatched;
     });
+
+    // Broadcast events ONLY AFTER transaction successfully commits
+    pendingEvents.forEach(e => broadcastEvent(e.event, e.payload));
+
+    return updatedTransfer;
   }
 
   static async receiveTransfer(id: string, createdBy: string) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const pendingEvents: { event: string; payload: any }[] = [];
+
+    const updatedTransfer = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const transfer = await tx.transfer.findUnique({
         where: { id },
         include: {
@@ -181,7 +188,6 @@ export class TransferService {
         throw new ValidationError(`Invalid transfer status for receive: ${transfer.status}`);
       }
 
-      // Upsert destination inventory
       let destInv = await tx.inventory.findUnique({
         where: { itemId_locationId: { itemId: transfer.itemId, locationId: transfer.destinationLocationId } }
       });
@@ -197,13 +203,11 @@ export class TransferService {
         });
       }
 
-      // Increase destination physical stock
       const updatedDestInv = await tx.inventory.update({
         where: { id: destInv.id },
         data: { physicalQuantity: destInv.physicalQuantity + transfer.quantity }
       });
 
-      // Create InventoryTransaction for destination
       await tx.inventoryTransaction.create({
         data: {
           inventoryId: destInv.id,
@@ -216,8 +220,7 @@ export class TransferService {
         }
       });
 
-      // Update transfer status
-      const updatedTransfer = await tx.transfer.update({
+      const received = await tx.transfer.update({
         where: { id },
         data: {
           status: TransferStatus.RECEIVED,
@@ -230,14 +233,21 @@ export class TransferService {
         }
       });
 
-      // Broadcast real-time events
-      broadcastEvent('TRANSFER_RECEIVED', updatedTransfer);
-      broadcastEvent('INVENTORY_UPDATED', {
-        ...updatedDestInv,
-        availableQuantity: updatedDestInv.physicalQuantity - updatedDestInv.reservedQuantity
+      pendingEvents.push({ event: 'TRANSFER_RECEIVED', payload: received });
+      pendingEvents.push({
+        event: 'INVENTORY_UPDATED',
+        payload: {
+          ...updatedDestInv,
+          availableQuantity: updatedDestInv.physicalQuantity - updatedDestInv.reservedQuantity
+        }
       });
 
-      return updatedTransfer;
+      return received;
     });
+
+    // Broadcast events ONLY AFTER transaction successfully commits
+    pendingEvents.forEach(e => broadcastEvent(e.event, e.payload));
+
+    return updatedTransfer;
   }
 }

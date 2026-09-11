@@ -94,6 +94,8 @@ model Item {
   orderItems  CustomerOrderItem[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+
+  @@index([categoryId])
 }
 
 model Inventory {
@@ -110,6 +112,7 @@ model Inventory {
   updatedAt        DateTime               @updatedAt
 
   @@unique([itemId, locationId])
+  @@index([locationId])
 }
 
 model InventoryTransaction {
@@ -123,6 +126,8 @@ model InventoryTransaction {
   referenceId   String?
   createdBy     String
   createdAt     DateTime     @default(now())
+
+  @@index([inventoryId, createdAt])
 }
 
 model WorkOrder {
@@ -139,6 +144,9 @@ model WorkOrder {
   createdBy       String
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+
+  @@index([locationId, status])
+  @@index([assignedUserId])
 }
 
 model Transfer {
@@ -157,6 +165,10 @@ model Transfer {
   receivedAt            DateTime?
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
+
+  @@index([status])
+  @@index([sourceLocationId])
+  @@index([destinationLocationId])
 }
 
 model Customer {
@@ -180,6 +192,9 @@ model CustomerOrder {
   items       CustomerOrderItem[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+
+  @@index([customerId])
+  @@index([status])
 }
 
 model CustomerOrderItem {
@@ -191,6 +206,9 @@ model CustomerOrderItem {
   quantity     Int
   unitPrice    Float
   reservations Reservation[]
+
+  @@index([orderId])
+  @@index([itemId])
 }
 
 model Reservation {
@@ -203,4 +221,7 @@ model Reservation {
   status      ReservationStatus @default(RESERVED)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+
+  @@index([orderItemId])
+  @@index([inventoryId, status])
 }

@@ -11,11 +11,13 @@ import customerRoutes from './routes/customer.routes';
 import orderRoutes from './routes/order.routes';
 import healthRoutes from './routes/health.routes';
 import { errorHandler } from './middleware/error.middleware';
+import { requestLogger } from './middleware/requestLogger.middleware';
 
 export const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
@@ -37,6 +39,31 @@ const swaggerOptions: swaggerJsdoc.Options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT'
+        }
+      },
+      schemas: {
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'object',
+              properties: {
+                message: { type: 'string', example: 'Operation failed' },
+                statusCode: { type: 'integer', example: 400 },
+                code: { type: 'string', example: 'VALIDATION_ERROR' },
+                details: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      field: { type: 'string', example: 'quantity' },
+                      message: { type: 'string', example: 'Quantity must be greater than zero' }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

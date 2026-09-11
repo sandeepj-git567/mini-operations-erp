@@ -48,7 +48,7 @@ describe('Mini Operations ERP API Test Suite', () => {
     await prisma.$disconnect();
   });
 
-  describe('Authentication & Authorization', () => {
+  describe('Authentication & Token Edge Cases', () => {
     test('POST /api/auth/login with valid credentials', async () => {
       const res = await request(app)
         .post('/api/auth/login')
@@ -63,16 +63,31 @@ describe('Mini Operations ERP API Test Suite', () => {
         .post('/api/auth/login')
         .send({ email: 'admin@example.com', password: 'WrongPassword' });
       expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
     });
 
-    test('GET /api/auth/me with valid token', async () => {
+    test('GET /api/auth/me without authorization header returns 401', async () => {
+      const res = await request(app).get('/api/auth/me');
+      expect(res.status).toBe(401);
+    });
+
+    test('GET /api/auth/me with malformed JWT returns 401', async () => {
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer invalid.malformed.jwt.token');
+      expect(res.status).toBe(401);
+    });
+
+    test('GET /api/auth/me with valid token returns user object', async () => {
       const res = await request(app)
         .get('/api/auth/me')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
       expect(res.body.email).toBe('admin@example.com');
     });
+  });
 
+  describe('Authorization & RBAC Enforcement', () => {
     test('Sales user attempting Admin work order creation returns 403 Forbidden', async () => {
       const opsUser = await prisma.user.findFirst({ where: { role: 'OPERATIONS_USER' } });
       const res = await request(app)
@@ -85,6 +100,54 @@ describe('Mini Operations ERP API Test Suite', () => {
           assignedUserId: opsUser!.id
         });
       expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    });
+
+    test('Operations user attempting Customer Order creation returns 403 Forbidden', async () => {
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${operationsToken}`)
+        .send({
+          customerId,
+          items: [{ itemId: microcontrollerItemId, quantity: 1, unitPrice: 100 }]
+        });
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('Input Validation & Error Edge Cases', () => {
+    test('POST /api/inventory/adjust with invalid negative quantity returns 400', async () => {
+      const res = await request(app)
+        .post('/api/inventory/adjust')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          itemId: microcontrollerItemId,
+          locationId: bangaloreLocationId,
+          quantity: -50,
+          reason: 'Invalid negative test'
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('POST /api/transfers between identical source & destination locations returns 400', async () => {
+      const res = await request(app)
+        .post('/api/transfers')
+        .set('Authorization', `Bearer ${operationsToken}`)
+        .send({
+          sourceLocationId: bangaloreLocationId,
+          destinationLocationId: bangaloreLocationId,
+          itemId: microcontrollerItemId,
+          quantity: 5
+        });
+      expect(res.status).toBe(400);
+    });
+
+    test('GET /api/orders/:id with non-existent UUID returns 404 Not Found', async () => {
+      const res = await request(app)
+        .get('/api/orders/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${salesToken}`);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -115,7 +178,6 @@ describe('Mini Operations ERP API Test Suite', () => {
 
   describe('Internal Transfer State Machine', () => {
     test('Create, Dispatch, and Receive Transfer workflow', async () => {
-      // 1. Create Transfer Request
       const createRes = await request(app)
         .post('/api/transfers')
         .set('Authorization', `Bearer ${operationsToken}`)
@@ -128,27 +190,23 @@ describe('Mini Operations ERP API Test Suite', () => {
       expect(createRes.status).toBe(201);
       const transferId = createRes.body.id;
 
-      // 2. Dispatch Transfer
       const dispatchRes = await request(app)
         .post(`/api/transfers/${transferId}/dispatch`)
         .set('Authorization', `Bearer ${operationsToken}`);
       expect(dispatchRes.status).toBe(200);
       expect(dispatchRes.body.status).toBe('DISPATCHED');
 
-      // 3. Attempt duplicate dispatch returns 409 Conflict
       const dupDispatchRes = await request(app)
         .post(`/api/transfers/${transferId}/dispatch`)
         .set('Authorization', `Bearer ${operationsToken}`);
       expect(dupDispatchRes.status).toBe(409);
 
-      // 4. Receive Transfer
       const receiveRes = await request(app)
         .post(`/api/transfers/${transferId}/receive`)
         .set('Authorization', `Bearer ${operationsToken}`);
       expect(receiveRes.status).toBe(200);
       expect(receiveRes.body.status).toBe('RECEIVED');
 
-      // 5. Attempt duplicate receive returns 409 Conflict
       const dupReceiveRes = await request(app)
         .post(`/api/transfers/${transferId}/receive`)
         .set('Authorization', `Bearer ${operationsToken}`);
@@ -158,7 +216,6 @@ describe('Mini Operations ERP API Test Suite', () => {
 
   describe('Stock Reservation & Concurrency Safety', () => {
     test('Over-reservation returns HTTP 409 Conflict', async () => {
-      // Create a customer order for 999999 units
       const orderRes = await request(app)
         .post('/api/orders')
         .set('Authorization', `Bearer ${salesToken}`)
@@ -175,7 +232,6 @@ describe('Mini Operations ERP API Test Suite', () => {
       expect(orderRes.status).toBe(201);
       const orderId = orderRes.body.id;
 
-      // Attempt to reserve stock
       const reserveRes = await request(app)
         .post(`/api/orders/${orderId}/reserve`)
         .set('Authorization', `Bearer ${salesToken}`)
@@ -186,7 +242,6 @@ describe('Mini Operations ERP API Test Suite', () => {
     });
 
     test('Order cancellation releases reserved stock', async () => {
-      // 1. Create order for 2 units
       const orderRes = await request(app)
         .post('/api/orders')
         .set('Authorization', `Bearer ${salesToken}`)
@@ -202,14 +257,12 @@ describe('Mini Operations ERP API Test Suite', () => {
         });
       const orderId = orderRes.body.id;
 
-      // 2. Reserve stock
       const reserveRes = await request(app)
         .post(`/api/orders/${orderId}/reserve`)
         .set('Authorization', `Bearer ${salesToken}`)
         .send({ locationId: bangaloreLocationId });
       expect(reserveRes.status).toBe(200);
 
-      // 3. Cancel order
       const cancelRes = await request(app)
         .post(`/api/orders/${orderId}/cancel`)
         .set('Authorization', `Bearer ${salesToken}`);
@@ -218,7 +271,6 @@ describe('Mini Operations ERP API Test Suite', () => {
     });
 
     test('Concurrent Stock Reservation safety test', async () => {
-      // Create two competing orders requesting stock near available limit
       const order1 = await request(app)
         .post('/api/orders')
         .set('Authorization', `Bearer ${salesToken}`)
@@ -235,7 +287,6 @@ describe('Mini Operations ERP API Test Suite', () => {
           items: [{ itemId: microcontrollerItemId, quantity: 25, unitPrice: 1000 }]
         });
 
-      // Fire parallel reservation requests
       const [res1, res2] = await Promise.all([
         request(app)
           .post(`/api/orders/${order1.body.id}/reserve`)
@@ -247,7 +298,6 @@ describe('Mini Operations ERP API Test Suite', () => {
           .send({ locationId: bangaloreLocationId })
       ]);
 
-      // At least one request or exact state check should succeed/conflict cleanly without data corruption
       const statuses = [res1.status, res2.status];
       expect(statuses).toContain(200);
     });

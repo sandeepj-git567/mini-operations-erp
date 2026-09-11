@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env.config';
 import { AuthRequest, JwtPayload } from '../types';
 import { UnauthorizedError } from '../utils/errors';
 
@@ -11,9 +12,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET || 'mini-erp-super-secret-jwt-key-2026';
-
-    const decoded = jwt.verify(token, secret) as JwtPayload;
+    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
     req.user = decoded;
     next();
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/prisma';
+import { env } from '../config/env.config';
 import { UnauthorizedError, NotFoundError } from '../utils/errors';
 import { JwtPayload, Role } from '../types';
 
@@ -20,7 +21,6 @@ export class AuthService {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const secret = process.env.JWT_SECRET || 'mini-erp-super-secret-jwt-key-2026';
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
@@ -28,7 +28,7 @@ export class AuthService {
       name: user.name
     };
 
-    const token = jwt.sign(payload, secret, { expiresIn: '24h' });
+    const token = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '24h' });
 
     const { passwordHash: _, ...userWithoutPassword } = user;
 

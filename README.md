@@ -1,46 +1,66 @@
-# Mini Operations ERP
+# Mini Operations ERP — HENNGE Production Engineering Showcase
 
-A production-grade, real-time **Mini Operations ERP** system built with Next.js 14, Express.js (TypeScript), Prisma ORM, Supabase PostgreSQL, and Socket.io.
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14.1-black.svg)](https://nextjs.org/)
+[![Express.js](https://img.shields.io/badge/Express-4.18-green.svg)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.10-blueviolet.svg)](https://www.prisma.io/)
+[![Docker](https://img.shields.io/badge/Docker-sandeepj07-blue.svg)](https://hub.docker.com/r/sandeepj07/mini-operations-erp-backend)
+[![CI Pipeline](https://img.shields.io/badge/GitHub_Actions-CI_Passed-success.svg)](https://github.com/sandeepj-git567/mini-operations-erp/actions)
+
+A production-grade, real-time **Mini Operations ERP** platform built for high-concurrency inventory control, work order tracking, stock transfers, and customer sales order fulfillment.
+
+This repository demonstrates enterprise full-stack engineering, security hygiene, concurrency control (`SELECT FOR UPDATE`), multi-stage Docker containerization, POSIX shell automation, GitHub Actions CI/CD pipelines, structured JSON logging, and AWS cloud deployment strategy.
 
 ---
 
 ## 🌐 Live Production Deployment & Links
 
-- **Live Frontend App (Vercel)**: [https://mini-operations-erp-frontend.vercel.app](https://mini-operations-erp-frontend.vercel.app)
-- **Live Backend API (Render)**: [https://mini-operations-erp-backend-l7sh.onrender.com/api](https://mini-operations-erp-backend-l7sh.onrender.com/api)
-- **Interactive Swagger API Docs**: [https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/](https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/)
-- **Live Postman Public Workspace**: [Postman Collection Run & Environment](https://sandeep-4675570.postman.co/workspace/mini-operations-erp/run/44214802-9182537c-7f6b-401d-b24a-dc4f09c2c4e5?action=share&creator=44214802&active-environment=44214802-4e272975-6ee4-462e-8961-6ba1a1a31f37)
-- **GitHub Repository**: [https://github.com/sandeepj-git567/mini-operations-erp](https://github.com/sandeepj-git567/mini-operations-erp)
-- **Loom Video Demo**: [Watch the 5-minute Walkthrough](https://www.loom.com/share/7c7ed9a60d844a91bf2ee5117b44f4a9)
-- **Video Walkthrough Artifact**: See [`walkthrough.md`](./walkthrough.md) with embedded animation video (`docs/mini_operations_erp_walkthrough.webp`).
+* **Live Frontend Web App (Vercel)**: [https://mini-operations-erp-frontend.vercel.app](https://mini-operations-erp-frontend.vercel.app)
+* **Live Backend API (Render)**: [https://mini-operations-erp-backend-l7sh.onrender.com/api](https://mini-operations-erp-backend-l7sh.onrender.com/api)
+* **Interactive Swagger API Docs**: [https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/](https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/)
+* **Docker Hub Registry**: [`sandeepj07/mini-operations-erp-backend`](https://hub.docker.com/r/sandeepj07/mini-operations-erp-backend)
+* **Postman Public Workspace**: [Run Postman Collection & Environment](https://sandeep-4675570.postman.co/workspace/mini-operations-erp/run/44214802-9182537c-7f6b-401d-b24a-dc4f09c2c4e5?action=share&creator=44214802&active-environment=44214802-4e272975-6ee4-462e-8961-6ba1a1a31f37)
+* **GitHub Repository**: [https://github.com/sandeepj-git567/mini-operations-erp](https://github.com/sandeepj-git567/mini-operations-erp)
+* **Loom Video Demo**: [Watch 5-Minute Technical Walkthrough](https://www.loom.com/share/7c7ed9a60d844a91bf2ee5117b44f4a9)
 
 ---
 
 ## 🚀 Business Lifecycle Flow
 
 ```
-LOGIN
-  ↓
-INVENTORY CONTROL
-  ↓
-WORK ORDER & STOCK CHECK
-  ↓
-INTERNAL TRANSFERS (SHORTAGE RESOLUTION)
-  ↓
-CUSTOMER SALES ORDER
-  ↓
-POSTGRESQL ATOMIC STOCK RESERVATION
+┌──────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
+│ 1. User Auth │ ──► │ 2. Stock Intake  │ ──► │ 3. Work Order    │ ──► │ 4. Internal Stock   │
+│   (JWT/RBAC) │     │ (Physical Count) │     │ (Material Check) │     │    Transfer (AZ)    │
+└──────────────┘     └──────────────────┘     └──────────────────┘     └──────────┬──────────┘
+                                                                                  │
+┌─────────────────────────┐     ┌────────────────────────┐                        │
+│ 6. Order Cancellation / │ ◄── │ 5. Customer Order &    │ ◄──────────────────────┘
+│    Reserved Release     │     │    Atomic Reservation  │
+└─────────────────────────┘     └────────────────────────┘
 ```
 
 ---
 
-## 🛠 Tech Stack
+## 🏗 Key Engineering Highlights
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Lucide Icons, Socket.io Client.
-- **Backend**: Node.js, Express.js, TypeScript, Prisma ORM, Zod Validation, JWT Authentication, bcryptjs, Socket.io Server, Swagger UI (`swagger-ui-express`).
-- **Database**: PostgreSQL (Hosted on **Supabase**).
-- **Testing**: Jest, Supertest, Newman CLI.
-- **API Documentation**: OpenAPI 3.0 / Swagger (`/api/docs`) & Auto-generated Postman Collection (`/postman`).
+### 1. Clean Layered Architecture
+Refactored API into strict separation of concerns (`Routes -> Controllers -> Services -> Data Access Layer`). Standardized asynchronous route error handling via custom `asyncHandler` wrappers, eliminating duplicate `try/catch` blocks and guaranteeing uniform `AppError` responses.
+
+### 2. Concurrency Safety & Row Locking (`SELECT FOR UPDATE`)
+Stock reservation requests execute inside Prisma interactive transactions utilizing raw PostgreSQL row-level locks (`SELECT * FROM "Inventory" WHERE id = $1 FOR UPDATE`). Prevents race conditions and over-reservations during simultaneous multi-user checkout.
+
+### 3. Event-Driven Real-Time Synchronization
+Socket.io real-time WebSocket events (`inventory:updated`, `transfer:updated`, `order:updated`) are triggered strictly **post-commit** after database transactions finalize, ensuring clients never render phantom or uncommitted state.
+
+### 4. Multi-Stage Docker Containerization (`sandeepj07`)
+Built multi-stage production Dockerfiles (`node:20-alpine`) utilizing non-root security execution contexts (`USER erpuser`), native `/api/health` check directives, and `.dockerignore` context filtering. Tagged for Docker Hub repository `sandeepj07/mini-operations-erp-backend`.
+
+### 5. GitHub Actions CI/CD Pipeline
+Automated Pull Request verification via [`.github/workflows/ci.yml`](file:///.github/workflows/ci.yml). Parallel jobs execute TypeScript compilation (`tsc --noEmit`), Next.js production builds, Docker container validation, and run 16-test integration suites against an isolated `postgres:15-alpine` service container.
+
+### 6. System Observability & Correlation Tracking
+Propagates `X-Request-ID` correlation headers across requests. Logs structured JSON payloads in production (`NODE_ENV=production`) for aggregators (AWS CloudWatch, Datadog) and benchmarks database latency (`dbLatencyMs`) and memory footprints (`rssMB`, `heapUsedMB`) via `GET /api/health`.
 
 ---
 
@@ -48,133 +68,60 @@ POSTGRESQL ATOMIC STOCK RESERVATION
 
 | Role | Email | Password | Allowed Scope |
 | :--- | :--- | :--- | :--- |
-| **ADMIN** | `admin@example.com` | `Password123!` | Full System Control (Users, Inventory Adjustments, Work Orders, Transfers, Sales, Reservations) |
-| **OPERATIONS_USER** | `operations@example.com` | `Password123!` | Inventory View/Adjust, Transfer Request/Dispatch/Receive, Work Order status management |
-| **SALES_USER** | `sales@example.com` | `Password123!` | Inventory Availability view, Customer creation, Customer Orders, Stock Reservations & Order Cancellations |
+| **`ADMIN`** | `admin@example.com` | `Password123!` | Full System Access (Users, Adjustments, Work Orders, Transfers, Sales, Reservations) |
+| **`OPERATIONS_USER`** | `operations@example.com` | `Password123!` | Inventory Adjustments, Work Order Processing, Stock Transfers (Dispatch/Receive) |
+| **`SALES_REPRESENTATIVE`** | `sales@example.com` | `Password123!` | Customer Management, Customer Sales Orders, Atomic Stock Reservations & Cancellations |
 
 ---
 
-## 🛡 Concurrency & Transaction Safety
+## 🛠 Local Quickstart & Development
 
-The application guarantees inventory integrity under high-concurrency race conditions:
+### Method A: POSIX Shell Scripts (Linux / macOS / WSL)
+```bash
+# 1. Clone repository
+git clone https://github.com/sandeepj-git567/mini-operations-erp.git
+cd mini-operations-erp
 
-1. **PostgreSQL Row Locking (`FOR UPDATE`)**:
-   Stock reservation requests execute inside a Prisma interactive transaction that locks the target `Inventory` row (`SELECT * FROM "Inventory" WHERE id = $1 FOR UPDATE`).
-2. **Over-Reservation Prevention**:
-   Available stock is computed as `physicalQuantity - reservedQuantity`. If requested quantity exceeds available stock, the transaction instantly rolls back and returns **HTTP 409 Conflict**.
-3. **Atomic Transfers**:
-   - `DISPATCHED`: Source location physical quantity decreases inside a transaction.
-   - `RECEIVED`: Destination location physical quantity increases inside a transaction.
-   - Prevents duplicate dispatches and duplicate receipts.
-4. **Order Cancellation & Stock Release**:
-   Cancelling an order automatically releases reserved stock back into available inventory with an audit log (`RELEASE`).
+# 2. Run automated environment setup, dependency installation & database seeding
+./scripts/setup.sh
+
+# 3. Execute backend & frontend test suites
+./scripts/test.sh
+```
+
+### Method B: Local Stack Orchestration via Docker Compose
+```bash
+# Build and launch PostgreSQL and Express API containers in background
+docker-compose up -d --build
+
+# View real-time container logs
+docker-compose logs -f backend
+```
 
 ---
 
-## 📡 Real-Time Synchronized Architecture
+## 📚 Technical Documentation Index
 
-- **Socket.io Layer**: Connected clients receive instant WebSocket payloads whenever stock levels adjust, transfers change status, or customer orders reserve stock.
-- **Multi-User Live Sync**: Open two browser windows (e.g., Admin and Sales) side-by-side to witness real-time stock deductions and badge status updates without refreshing the page!
-- **Live Status Indicator**: A pulsing green badge in the navigation bar indicates active Socket.io connection (`Connected`).
+All architectural decisions, diagrams, and security models are documented in the [`docs/`](file:///docs/) directory:
 
----
-
-## 🧪 Automated Testing
-
-### 1. Backend Jest Test Suite
-```bash
-cd backend
-npm test
-```
-Executes 10 comprehensive tests covering:
-- Authentication & JWT token generation
-- Role-based authorization enforcement (HTTP 403)
-- Inventory stock adjustments
-- Transfer state machine & duplicate action prevention (HTTP 409)
-- Over-reservation rejection (HTTP 409)
-- Order cancellation and reserved stock release
-- Concurrent stock reservation race conditions
-
-### 2. Newman Postman Test Suite
-```bash
-npx newman run postman/Mini-Operations-ERP.postman_collection.json -e postman/Mini-Operations-ERP.postman_environment.json
-```
-Executes **47 API requests and 52 test assertions** with **100% PASS** results.
+1. [docs/ENGINEERING_AUDIT.md](file:///docs/ENGINEERING_AUDIT.md) — 20-Section Comprehensive Production System Audit & Roadmap
+2. [docs/ENVIRONMENT.md](file:///docs/ENVIRONMENT.md) — Zod Runtime Environment Schema Validation & Secrets Guide
+3. [docs/decisions/ADR-001-clean-layered-architecture.md](file:///docs/decisions/ADR-001-clean-layered-architecture.md) — Architecture Decision Record: Layered Refactoring
+4. [docs/AUTHENTICATION.md](file:///docs/AUTHENTICATION.md) — JWT Authentication Architecture & Password Hashing Standard
+5. [docs/AUTHORIZATION.md](file:///docs/AUTHORIZATION.md) — Role-Based Access Control (RBAC) Permission Matrix
+6. [docs/DATABASE_TRANSACTIONS.md](file:///docs/DATABASE_TRANSACTIONS.md) — Prisma Transactions, Indexes & Row-Level Locking (`SELECT FOR UPDATE`)
+7. [docs/REALTIME.md](file:///docs/REALTIME.md) — Socket.io WebSocket Event Synchronization Architecture
+8. [docs/TESTING.md](file:///docs/TESTING.md) — Edge Case Testing Strategy, Jest API Suite & Newman Automation
+9. [docs/LINUX_SETUP.md](file:///docs/LINUX_SETUP.md) — POSIX Shell Scripting & Developer Experience Guide
+10. [docs/DOCKER.md](file:///docs/DOCKER.md) — Multi-Stage Build Architecture & Docker Hub Deployment (`sandeepj07`)
+11. [docs/CI_CD.md](file:///docs/CI_CD.md) — GitHub Actions CI/CD Pipeline & Service Container Specification
+12. [docs/OBSERVABILITY.md](file:///docs/OBSERVABILITY.md) — Structured JSON Logging, Correlation IDs (`X-Request-ID`) & Diagnostics
+13. [docs/AWS_DEPLOYMENT.md](file:///docs/AWS_DEPLOYMENT.md) — AWS Cloud Architecture, ECS Fargate, Multi-AZ RDS & Terraform IaC
+14. [docs/ER-DIAGRAM.md](file:///docs/ER-DIAGRAM.md) — Entity-Relationship Diagram & Database Schemas
+15. [docs/DEMO-SCRIPT.md](file:///docs/DEMO-SCRIPT.md) — Step-by-Step Technical Demo Script for Evaluators
 
 ---
 
-## ⚡ Local Setup Instructions
+## 📄 License
 
-### 1. Environment Configuration
-
-Create `backend/.env`:
-```env
-PORT=5000
-DATABASE_URL="postgresql://postgres.lofxxcdrydodyvbtjooy:%40Sandeepj9660@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
-JWT_SECRET="mini-erp-super-secret-jwt-key-2026"
-FRONTEND_URL="http://localhost:3000"
-```
-
-Create `frontend/.env`:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
-```
-
-### 2. Database Migration & Seeding
-
-```bash
-# Navigate to backend
-cd backend
-
-# Install dependencies
-npm install
-
-# Push Prisma schema to Supabase PostgreSQL
-npx prisma db push
-
-# Seed initial locations, demo users, categories, items, and inventories
-npm run seed
-```
-
-### 3. Run Backend Server
-
-```bash
-npm run dev
-```
-- **Swagger Documentation**: [http://localhost:5000/api/docs](http://localhost:5000/api/docs)
-- **Health Check**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
-
-### 4. Run Frontend Application
-
-```bash
-cd ../frontend
-npm run dev
-```
-Access the UI at [http://localhost:3000](http://localhost:3000).
-
----
-
-## 📮 Postman Collection & Environment
-
-Automated generator script:
-```bash
-node postman/generate_postman.js
-```
-
-Included Folders:
-1. **Authentication** (Login Admin, Operations, Sales - auto-saves JWT tokens)
-2. **Inventory** (Get Inventory, Single Item, Adjust Stock, Transactions)
-3. **Work Orders** (List, Create, Get, Update Status)
-4. **Transfers** (List, Create, Dispatch, Receive)
-5. **Customers** (List, Create)
-6. **Customer Orders** (List, Create, Get, Reserve, Cancel)
-7. **Health** (Health Check)
-8. **Negative Tests** (Over-reservation 409, Over-transfer 409, Duplicate dispatch 409, Duplicate receive 409, Invalid negative quantity 400, Unauthorized role access 403)
-9. **FINAL BUSINESS FLOW** (15 sequential automated requests demonstrating the entire business lifecycle)
-
----
-
-## 📐 ER Diagram & Database Schema
-
-Detailed Entity-Relationship Diagram is located in [docs/ER-DIAGRAM.md](./docs/ER-DIAGRAM.md).
+This project is open-source and available under the [MIT License](LICENSE).

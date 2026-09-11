@@ -1,12 +1,15 @@
 import { prisma } from '../config/prisma';
-import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
+import { NotFoundError, ConflictError } from '../utils/errors';
 import { broadcastEvent } from './realtime.service';
 import { MovementType, OrderStatus, ReservationStatus } from '../types';
 import { Prisma } from '@prisma/client';
 
 export class ReservationService {
   static async reserveStockForOrder(orderId: string, locationId: string, createdBy: string) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // Collect pending events to broadcast only AFTER successful transaction commit
+    const pendingEvents: { event: string; payload: any }[] = [];
+
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const order = await tx.customerOrder.findUnique({
         where: { id: orderId },
         include: {
@@ -34,7 +37,6 @@ export class ReservationService {
       const createdReservations = [];
 
       for (const item of order.items) {
-        // Find existing inventory record
         let inv = await tx.inventory.findUnique({
           where: { itemId_locationId: { itemId: item.itemId, locationId } }
         });
@@ -50,7 +52,6 @@ export class ReservationService {
           SELECT * FROM "Inventory" WHERE "id" = ${inv.id} FOR UPDATE
         `;
 
-        // Fetch locked inventory record with full Prisma typing
         const lockedInv = await tx.inventory.findUnique({ where: { id: inv.id } });
         if (!lockedInv) {
           throw new NotFoundError('Locked inventory record not found');
@@ -63,13 +64,11 @@ export class ReservationService {
           );
         }
 
-        // Increase reserved quantity
         const updatedInv = await tx.inventory.update({
           where: { id: lockedInv.id },
           data: { reservedQuantity: lockedInv.reservedQuantity + item.quantity }
         });
 
-        // Create Reservation record
         const reservation = await tx.reservation.create({
           data: {
             orderItemId: item.id,
@@ -79,7 +78,6 @@ export class ReservationService {
           }
         });
 
-        // Audit transaction
         await tx.inventoryTransaction.create({
           data: {
             inventoryId: lockedInv.id,
@@ -94,14 +92,15 @@ export class ReservationService {
 
         createdReservations.push(reservation);
 
-        // Realtime event per item stock update
-        broadcastEvent('INVENTORY_UPDATED', {
-          ...updatedInv,
-          availableQuantity: updatedInv.physicalQuantity - updatedInv.reservedQuantity
+        pendingEvents.push({
+          event: 'INVENTORY_UPDATED',
+          payload: {
+            ...updatedInv,
+            availableQuantity: updatedInv.physicalQuantity - updatedInv.reservedQuantity
+          }
         });
       }
 
-      // Update Order Status to CONFIRMED
       const updatedOrder = await tx.customerOrder.update({
         where: { id: orderId },
         data: { status: OrderStatus.CONFIRMED },
@@ -116,17 +115,27 @@ export class ReservationService {
         }
       });
 
-      broadcastEvent('ORDER_RESERVED', updatedOrder);
+      pendingEvents.push({
+        event: 'ORDER_RESERVED',
+        payload: updatedOrder
+      });
 
       return {
         order: updatedOrder,
         reservations: createdReservations
       };
     });
+
+    // Broadcast WebSocket events ONLY AFTER transaction successfully commits
+    pendingEvents.forEach(e => broadcastEvent(e.event, e.payload));
+
+    return result;
   }
 
   static async cancelOrder(orderId: string, createdBy: string) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const pendingEvents: { event: string; payload: any }[] = [];
+
+    const updatedOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const order = await tx.customerOrder.findUnique({
         where: { id: orderId },
         include: {
@@ -147,7 +156,6 @@ export class ReservationService {
         throw new ConflictError('Order is already cancelled');
       }
 
-      // Release all active reservations
       for (const item of order.items) {
         for (const res of item.reservations) {
           const inv = await tx.inventory.findUnique({ where: { id: res.inventoryId } });
@@ -176,15 +184,18 @@ export class ReservationService {
               }
             });
 
-            broadcastEvent('INVENTORY_UPDATED', {
-              ...updatedInv,
-              availableQuantity: updatedInv.physicalQuantity - updatedInv.reservedQuantity
+            pendingEvents.push({
+              event: 'INVENTORY_UPDATED',
+              payload: {
+                ...updatedInv,
+                availableQuantity: updatedInv.physicalQuantity - updatedInv.reservedQuantity
+              }
             });
           }
         }
       }
 
-      const updatedOrder = await tx.customerOrder.update({
+      const cancelled = await tx.customerOrder.update({
         where: { id: orderId },
         data: { status: OrderStatus.CANCELLED },
         include: {
@@ -198,9 +209,17 @@ export class ReservationService {
         }
       });
 
-      broadcastEvent('ORDER_CANCELLED', updatedOrder);
+      pendingEvents.push({
+        event: 'ORDER_CANCELLED',
+        payload: cancelled
+      });
 
-      return updatedOrder;
+      return cancelled;
     });
+
+    // Broadcast events AFTER transaction commit
+    pendingEvents.forEach(e => broadcastEvent(e.event, e.payload));
+
+    return updatedOrder;
   }
 }
