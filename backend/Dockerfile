@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 # Stage 1: Build Stage
 # ------------------------------------------------------------------------------
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN npm prune --production
 # ------------------------------------------------------------------------------
 # Stage 2: Production Runtime Stage
 # ------------------------------------------------------------------------------
-FROM node:20-slim AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
@@ -36,10 +36,10 @@ ENV NODE_ENV=production
 ENV PORT=5000
 
 # Install wget for lightweight container healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache wget
 
 # Create non-root system user for security hardening
-RUN groupadd -r erpgroup && useradd -r -g erpgroup erpuser
+RUN addgroup -S erpgroup && adduser -S erpuser -G erpgroup
 
 # Copy built dist, production node_modules, and Prisma artifacts from Builder
 COPY --from=builder /app/package.json ./

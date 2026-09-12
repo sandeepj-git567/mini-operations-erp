@@ -9,8 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../lib/socket';
 import { apiRequest } from '../../lib/api';
 import { Transfer, Location, Item } from '../../types';
-import { Cyber3DCard } from '../../components/Cyber3DCard';
-import { Plus, Send, CheckCircle2, ArrowRight, ArrowLeftRight, Terminal } from 'lucide-react';
+import { Plus, Send, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function TransfersPage() {
   const { user } = useAuth();
@@ -123,70 +122,65 @@ export default function TransfersPage() {
   const canManage = user?.role === 'ADMIN' || user?.role === 'OPERATIONS_USER';
 
   return (
-    <div className="min-h-screen bg-cyber-bg flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
-          
-          {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-cyber-cyan/20 pb-4">
+        <main className="flex-1 p-8 max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-orbitron font-extrabold text-white tracking-widest text-neon-cyan flex items-center gap-2">
-                <ArrowLeftRight className="w-6 h-6 text-cyber-purple animate-pulse" />
-                QUANTUM STOCK TRANSFERS
-              </h1>
-              <p className="text-xs font-mono-code text-cyber-cyan/70 mt-1">Transfer inventory between hub nodes with two-stage dispatch & receipt state machines.</p>
+              <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Internal Stock Transfers</h1>
+              <p className="text-sm text-slate-500">Transfer inventory between warehouses with two-stage dispatch & receipt controls.</p>
             </div>
             {canManage && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="cyber-button px-4 py-2.5 rounded-xl text-xs flex items-center space-x-2"
+                className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-purple-600/30 transition-all flex items-center space-x-2 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                <span>REQUEST TRANSFER</span>
+                <span>Request Stock Transfer</span>
               </button>
             )}
           </div>
 
           {/* Transfers Table */}
-          <Cyber3DCard glowColor="purple" className="p-0 overflow-hidden bg-cyber-surface/90 border border-cyber-cyan/30">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono-code text-slate-300">
-                <thead className="bg-cyber-bg/90 border-b border-cyber-cyan/30 text-[10px] font-orbitron font-bold text-cyber-cyan uppercase tracking-wider">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <th className="px-6 py-4">TRANSFER VECTOR #</th>
-                    <th className="px-6 py-4">SOURCE NODE</th>
-                    <th className="px-6 py-4">DESTINATION NODE</th>
-                    <th className="px-6 py-4">MATERIAL & SKU</th>
-                    <th className="px-6 py-4 text-center">QUANTITY</th>
-                    <th className="px-6 py-4 text-center">STATUS</th>
-                    <th className="px-6 py-4 text-right">WORKFLOW ACTION</th>
+                    <th className="px-6 py-4">Transfer #</th>
+                    <th className="px-6 py-4">Source Location</th>
+                    <th className="px-6 py-4">Destination Location</th>
+                    <th className="px-6 py-4">Item & SKU</th>
+                    <th className="px-6 py-4 text-center">Quantity</th>
+                    <th className="px-6 py-4 text-center">Status</th>
+                    <th className="px-6 py-4 text-right">Workflow Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-cyber-cyan/10">
+                <tbody className="divide-y divide-slate-100 font-medium">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-cyber-cyan font-orbitron animate-pulse">SYNCHRONIZING TRANSFER VECTOR...</td>
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">Loading transfers...</td>
                     </tr>
                   ) : transfers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-orbitron">NO STOCK TRANSFERS RECORDED.</td>
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">No stock transfer requests recorded.</td>
                     </tr>
                   ) : (
                     transfers.map((trf) => (
-                      <tr key={trf.id} className="hover:bg-cyber-cyan/5 transition-colors">
-                        <td className="px-6 py-4 font-bold text-cyber-cyan text-xs text-neon-cyan">{trf.transferNumber}</td>
-                        <td className="px-6 py-4 font-bold text-white">{trf.sourceLocation.name}</td>
-                        <td className="px-6 py-4 font-bold text-cyber-cyan flex items-center space-x-1">
-                          <ArrowRight className="w-3.5 h-3.5 text-cyber-pink mr-1" />
+                      <tr key={trf.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-6 py-4 font-mono font-bold text-purple-600">{trf.transferNumber}</td>
+                        <td className="px-6 py-4 font-semibold text-slate-800">{trf.sourceLocation.name}</td>
+                        <td className="px-6 py-4 font-semibold text-slate-800 flex items-center space-x-1">
+                          <ArrowRight className="w-4 h-4 text-slate-400 mr-1" />
                           <span>{trf.destinationLocation.name}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-bold text-white text-xs">{trf.item.name}</div>
-                          <div className="text-[10px] text-cyber-cyan">{trf.item.sku}</div>
+                          <div className="font-semibold text-slate-800">{trf.item.name}</div>
+                          <div className="text-xs text-slate-400 font-mono">{trf.item.sku}</div>
                         </td>
-                        <td className="px-6 py-4 text-center font-bold text-white">{trf.quantity} {trf.item.unit}</td>
+                        <td className="px-6 py-4 text-center font-bold text-slate-800">{trf.quantity} {trf.item.unit}</td>
                         <td className="px-6 py-4 text-center">
                           <StatusBadge status={trf.status} />
                         </td>
@@ -194,25 +188,25 @@ export default function TransfersPage() {
                           {trf.status === 'REQUESTED' && canManage && (
                             <button
                               onClick={() => handleDispatch(trf.id)}
-                              className="text-[10px] font-orbitron font-bold px-3 py-1.5 rounded-lg border border-cyber-purple/50 bg-cyber-purple/10 text-cyber-purple hover:bg-cyber-purple/30 transition-all inline-flex items-center space-x-1"
+                              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors inline-flex items-center space-x-1"
                             >
-                              <Send className="w-3 h-3" />
-                              <span>DISPATCH</span>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Dispatch</span>
                             </button>
                           )}
 
                           {trf.status === 'DISPATCHED' && canManage && (
                             <button
                               onClick={() => handleReceive(trf.id)}
-                              className="text-[10px] font-orbitron font-bold px-3 py-1.5 rounded-lg border border-cyber-green/50 bg-cyber-green/10 text-cyber-green hover:bg-cyber-green/30 transition-all inline-flex items-center space-x-1"
+                              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors inline-flex items-center space-x-1"
                             >
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>RECEIVE STOCK</span>
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Receive Stock</span>
                             </button>
                           )}
 
                           {trf.status === 'RECEIVED' && (
-                            <span className="text-[10px] font-orbitron font-bold text-slate-500 italic">TRANSFERRED</span>
+                            <span className="text-xs font-medium text-slate-400 italic">Completed</span>
                           )}
                         </td>
                       </tr>
@@ -221,22 +215,22 @@ export default function TransfersPage() {
                 </tbody>
               </table>
             </div>
-          </Cyber3DCard>
+          </div>
 
-          {/* Create Transfer Cyber Modal */}
-          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="REQUEST STOCK TRANSFER VECTOR">
+          {/* Create Transfer Modal */}
+          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Internal Stock Transfer Request">
             {error && (
-              <div className="bg-cyber-pink/10 border border-cyber-pink/50 text-cyber-pink p-3 rounded-xl text-xs font-orbitron font-bold mb-4">
-                [ERROR]: {error}
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs font-medium mb-4">
+                {error}
               </div>
             )}
-            <form onSubmit={handleCreateTransfer} className="space-y-4 font-mono-code text-xs">
+            <form onSubmit={handleCreateTransfer} className="space-y-4">
               <div>
-                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Source Node Hub (From)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Source Location (From)</label>
                 <select
                   value={sourceLocationId}
                   onChange={(e) => setSourceLocationId(e.target.value)}
-                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-500"
                 >
                   {locations.map((loc) => (
                     <option key={loc.id} value={loc.id}>{loc.name} ({loc.code})</option>
@@ -245,11 +239,11 @@ export default function TransfersPage() {
               </div>
 
               <div>
-                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Destination Node Hub (To)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Destination Location (To)</label>
                 <select
                   value={destinationLocationId}
                   onChange={(e) => setDestinationLocationId(e.target.value)}
-                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-500"
                 >
                   {locations.map((loc) => (
                     <option key={loc.id} value={loc.id}>{loc.name} ({loc.code})</option>
@@ -258,11 +252,11 @@ export default function TransfersPage() {
               </div>
 
               <div>
-                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Item Component</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Item to Transfer</label>
                 <select
                   value={itemId}
                   onChange={(e) => setItemId(e.target.value)}
-                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-500"
                 >
                   {items.map((it) => (
                     <option key={it.id} value={it.id}>{it.sku} - {it.name}</option>
@@ -271,36 +265,35 @@ export default function TransfersPage() {
               </div>
 
               <div>
-                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Transfer Quantity</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Transfer Quantity</label>
                 <input
                   type="number"
                   min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
                   required
-                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-cyber-cyan/20">
+              <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-orbitron font-bold text-slate-400 hover:text-white rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                 >
-                  ABORT
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="cyber-button px-5 py-2.5 rounded-xl text-xs"
+                  className="px-5 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-xl transition-colors shadow-md"
                 >
-                  {submitting ? 'DISPATCHING...' : 'INITIATE TRANSFER'}
+                  {submitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
             </form>
           </Modal>
-
         </main>
       </div>
     </div>

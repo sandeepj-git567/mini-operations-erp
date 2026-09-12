@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, ShieldAlert } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,35 +10,22 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-}) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-cyber-surface/95 border-2 border-cyber-cyan/60 rounded-2xl shadow-[0_0_50px_rgba(0,243,255,0.3)] cyber-clip overflow-hidden">
-        
-        {/* Holographic Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-cyan/30 bg-cyber-bg/80">
-          <h2 className="font-orbitron font-bold text-base text-cyber-cyan tracking-wider flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-cyber-cyan animate-pulse" />
-            {title}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden transform transition-all">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+          <h3 className="text-lg font-bold text-slate-800">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-cyber-pink hover:bg-cyber-pink/10 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Modal Body */}
-        <div className="p-6 text-slate-200">{children}</div>
-
+        <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
       </div>
     </div>
   );

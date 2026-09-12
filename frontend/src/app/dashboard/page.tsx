@@ -6,16 +6,13 @@ import { Sidebar } from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../lib/socket';
 import { apiRequest } from '../../lib/api';
-import { Cyber3DCard } from '../../components/Cyber3DCard';
 import { 
   Boxes, 
   AlertTriangle, 
   ClipboardList, 
   ArrowLeftRight, 
   ShoppingCart,
-  Zap,
-  Activity,
-  Terminal
+  TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -76,147 +73,114 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-cyber-bg flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
-          
-          {/* Header & Status Banner */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-cyber-cyan/20 pb-4">
-            <div>
-              <h1 className="text-2xl font-orbitron font-extrabold text-white tracking-widest text-neon-cyan flex items-center gap-2">
-                <Activity className="w-6 h-6 text-cyber-cyan animate-pulse" />
-                QUANTUM TELEMETRY DASHBOARD
-              </h1>
-              <p className="text-xs font-mono-code text-cyber-cyan/70 mt-1">Real-time dynamic monitoring across inventory nodes & transfer vectors.</p>
+        <main className="flex-1 p-8 max-w-7xl mx-auto space-y-8">
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Operations Dashboard</h1>
+            <p className="text-sm text-slate-500">Real-time overview of inventory levels, work orders, transfers, and customer demand.</p>
+          </div>
+
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Items</span>
+                <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
+                  <Boxes className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.totalItems}</div>
             </div>
-            <div className="flex items-center gap-2 bg-cyber-surface/90 border border-cyber-green/40 px-3.5 py-1.5 rounded-xl text-xs font-orbitron font-bold text-cyber-green">
-              <Zap className="w-4 h-4 text-cyber-green animate-pulse" />
-              <span>ATOMIC SYNC ENGINE: ACTIVE</span>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low Stock</span>
+                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.lowStockCount}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Open Work Orders</span>
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.openWorkOrders}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Transfers</span>
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                  <ArrowLeftRight className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.pendingTransfers}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Orders</span>
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.todayOrders}</div>
             </div>
           </div>
 
-          {/* 3D Cyber Metric Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            <Cyber3DCard glowColor="cyan" className="p-4 bg-cyber-surface/80 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-orbitron font-bold text-cyber-cyan/80 uppercase tracking-widest">TOTAL ITEMS</span>
-                <div className="p-2 bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan rounded-lg">
-                  <Boxes className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-orbitron font-extrabold text-white text-neon-cyan">{loading ? '...' : stats.totalItems}</div>
-            </Cyber3DCard>
-
-            <Cyber3DCard glowColor="pink" className="p-4 bg-cyber-surface/80 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-orbitron font-bold text-cyber-pink/80 uppercase tracking-widest">LOW STOCK</span>
-                <div className="p-2 bg-cyber-pink/10 border border-cyber-pink/40 text-cyber-pink rounded-lg">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-orbitron font-extrabold text-cyber-pink text-neon-pink">{loading ? '...' : stats.lowStockCount}</div>
-            </Cyber3DCard>
-
-            <Cyber3DCard glowColor="purple" className="p-4 bg-cyber-surface/80 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-orbitron font-bold text-cyber-purple/80 uppercase tracking-widest">OPEN WORK ORDERS</span>
-                <div className="p-2 bg-cyber-purple/10 border border-cyber-purple/40 text-cyber-purple rounded-lg">
-                  <ClipboardList className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-orbitron font-extrabold text-white">{loading ? '...' : stats.openWorkOrders}</div>
-            </Cyber3DCard>
-
-            <Cyber3DCard glowColor="cyan" className="p-4 bg-cyber-surface/80 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-orbitron font-bold text-cyber-cyan/80 uppercase tracking-widest">TRANSFERS</span>
-                <div className="p-2 bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan rounded-lg">
-                  <ArrowLeftRight className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-orbitron font-extrabold text-white">{loading ? '...' : stats.pendingTransfers}</div>
-            </Cyber3DCard>
-
-            <Cyber3DCard glowColor="green" className="p-4 bg-cyber-surface/80 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-orbitron font-bold text-cyber-green/80 uppercase tracking-widest">DEMAND ORDERS</span>
-                <div className="p-2 bg-cyber-green/10 border border-cyber-green/40 text-cyber-green rounded-lg">
-                  <ShoppingCart className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-orbitron font-extrabold text-cyber-green text-neon-green">{loading ? '...' : stats.todayOrders}</div>
-            </Cyber3DCard>
-
-          </div>
-
-          {/* Futuristic Business Protocol Flow */}
-          <Cyber3DCard glowColor="cyan" className="p-6 bg-cyber-surface/90 space-y-4">
-            <div className="flex items-center justify-between border-b border-cyber-cyan/20 pb-3">
-              <h2 className="font-orbitron font-bold text-base text-white tracking-wider flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-cyber-cyan" />
-                OPERATIONAL LIFECYCLE PROTOCOLS
-              </h2>
-              <span className="text-[10px] font-mono-code text-cyber-cyan bg-cyber-cyan/10 px-2.5 py-1 rounded border border-cyber-cyan/40">
-                POSTGRES ATOMIC ENGINE
-              </span>
-            </div>
-
+          {/* Quick Flow Navigation */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <h2 className="text-lg font-bold text-slate-800">Complete Business Lifecycle Workflow</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              
-              <Link href="/inventory">
-                <div className="cyber-card p-4 rounded-xl border border-cyber-cyan/30 hover:border-cyber-cyan transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyber-cyan/20 border border-cyber-cyan text-cyber-cyan rounded-lg group-hover:scale-110 transition-transform">
-                      <Boxes className="w-5 h-5" />
-                    </div>
-                    <div className="font-orbitron font-bold text-xs text-white group-hover:text-cyber-cyan tracking-wider">1. STOCK MATRIX</div>
+              <Link href="/inventory" className="group p-4 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-sky-600 text-white rounded-lg">
+                    <Boxes className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-mono-code text-slate-400">Monitor physical, reserved & available items across warehouses.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-sky-600">1. Stock Check</div>
                 </div>
+                <p className="text-xs text-slate-500">Monitor physical, reserved, and available quantity across warehouses.</p>
               </Link>
 
-              <Link href="/work-orders">
-                <div className="cyber-card p-4 rounded-xl border border-cyber-yellow/30 hover:border-cyber-yellow transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyber-yellow/20 border border-cyber-yellow text-cyber-yellow rounded-lg group-hover:scale-110 transition-transform">
-                      <ClipboardList className="w-5 h-5" />
-                    </div>
-                    <div className="font-orbitron font-bold text-xs text-white group-hover:text-cyber-yellow tracking-wider">2. WORK ORDERS</div>
+              <Link href="/work-orders" className="group p-4 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-amber-600 text-white rounded-lg">
+                    <ClipboardList className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-mono-code text-slate-400">Issue assembly work orders, calculate material shortages & check availability.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-amber-600">2. Work Orders</div>
                 </div>
+                <p className="text-xs text-slate-500">Create work orders, check material availability, and identify shortages.</p>
               </Link>
 
-              <Link href="/transfers">
-                <div className="cyber-card p-4 rounded-xl border border-cyber-purple/30 hover:border-cyber-purple transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyber-purple/20 border border-cyber-purple text-cyber-purple rounded-lg group-hover:scale-110 transition-transform">
-                      <ArrowLeftRight className="w-5 h-5" />
-                    </div>
-                    <div className="font-orbitron font-bold text-xs text-white group-hover:text-cyber-purple tracking-wider">3. STOCK TRANSFERS</div>
+              <Link href="/transfers" className="group p-4 bg-slate-50 hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-purple-600 text-white rounded-lg">
+                    <ArrowLeftRight className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-mono-code text-slate-400">Transfer stock between BLR & MAA hubs with atomic dispatch & receipt.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-purple-600">3. Stock Transfers</div>
                 </div>
+                <p className="text-xs text-slate-500">Transfer stock between Bangalore and Chennai with dispatch & receive controls.</p>
               </Link>
 
-              <Link href="/customer-orders">
-                <div className="cyber-card p-4 rounded-xl border border-cyber-green/30 hover:border-cyber-green transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyber-green/20 border border-cyber-green text-cyber-green rounded-lg group-hover:scale-110 transition-transform">
-                      <ShoppingCart className="w-5 h-5" />
-                    </div>
-                    <div className="font-orbitron font-bold text-xs text-white group-hover:text-cyber-green tracking-wider">4. ATOMIC RESERVATIONS</div>
+              <Link href="/customer-orders" className="group p-4 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-emerald-600 text-white rounded-lg">
+                    <ShoppingCart className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-mono-code text-slate-400">Execute PostgreSQL SELECT FOR UPDATE stock reservations with 409 protection.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-emerald-600">4. Customer Orders</div>
                 </div>
+                <p className="text-xs text-slate-500">Create sales orders and execute atomic PostgreSQL stock reservations.</p>
               </Link>
-
             </div>
-          </Cyber3DCard>
-
+          </div>
         </main>
       </div>
     </div>
