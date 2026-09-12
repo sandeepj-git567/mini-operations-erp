@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 
 interface StatusBadgeProps {
@@ -5,32 +7,36 @@ interface StatusBadgeProps {
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  let colorClasses = 'bg-slate-100 text-slate-800 border-slate-300';
-
-  switch (status) {
-    case 'ASSIGNED':
-    case 'REQUESTED':
-    case 'DRAFT':
-      colorClasses = 'bg-amber-50 text-amber-700 border-amber-200';
-      break;
-    case 'IN_PROGRESS':
-    case 'DISPATCHED':
-      colorClasses = 'bg-blue-50 text-blue-700 border-blue-200';
-      break;
-    case 'COMPLETED':
-    case 'RECEIVED':
-    case 'CONFIRMED':
-    case 'RESERVED':
-      colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      break;
-    case 'CANCELLED':
-    case 'RELEASED':
-      colorClasses = 'bg-rose-50 text-rose-700 border-rose-200';
-      break;
-  }
+  const getStatusStyle = (s: string) => {
+    switch (s.toUpperCase()) {
+      case 'ASSIGNED':
+      case 'DRAFT':
+        return 'bg-cyber-cyan/10 border-cyber-cyan/50 text-cyber-cyan shadow-[0_0_10px_rgba(0,243,255,0.2)]';
+      case 'IN_PROGRESS':
+      case 'REQUESTED':
+        return 'bg-cyber-yellow/10 border-cyber-yellow/50 text-cyber-yellow shadow-[0_0_10px_rgba(255,170,0,0.2)]';
+      case 'COMPLETED':
+      case 'RECEIVED':
+      case 'CONFIRMED':
+      case 'RESERVED':
+        return 'bg-cyber-green/10 border-cyber-green/50 text-cyber-green shadow-[0_0_10px_rgba(0,255,102,0.2)]';
+      case 'DISPATCHED':
+        return 'bg-cyber-purple/10 border-cyber-purple/50 text-cyber-purple shadow-[0_0_10px_rgba(157,78,221,0.2)]';
+      case 'CANCELLED':
+      case 'RELEASED':
+        return 'bg-cyber-pink/10 border-cyber-pink/50 text-cyber-pink shadow-[0_0_10px_rgba(255,0,85,0.2)]';
+      default:
+        return 'bg-slate-800 border-slate-700 text-slate-300';
+    }
+  };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colorClasses}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-orbitron font-bold text-[10px] uppercase tracking-wider ${getStatusStyle(
+        status
+      )}`}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
       {status}
     </span>
   );

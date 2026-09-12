@@ -8,8 +8,9 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../lib/socket';
 import { apiRequest } from '../../lib/api';
-import { WorkOrder, Location, Item, User } from '../../types';
-import { Plus, ArrowLeftRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { WorkOrder, Location, Item } from '../../types';
+import { Cyber3DCard } from '../../components/Cyber3DCard';
+import { Plus, ArrowLeftRight, AlertCircle, CheckCircle2, ClipboardList, Terminal } from 'lucide-react';
 import Link from 'next/link';
 
 export default function WorkOrdersPage() {
@@ -18,7 +19,6 @@ export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [opsUsers, setOpsUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -32,15 +32,13 @@ export default function WorkOrdersPage() {
 
   const fetchWorkOrdersData = async () => {
     try {
-      const [wo, inv, users] = await Promise.all([
+      const [wo, inv] = await Promise.all([
         apiRequest('/work-orders'),
-        apiRequest('/inventory'),
-        apiRequest('/auth/me') // or users endpoint fallback
+        apiRequest('/inventory')
       ]);
 
       setWorkOrders(wo);
 
-      // Extract unique locations and items from inventory
       const locMap = new Map();
       const itemMap = new Map();
       inv.forEach((i: any) => {
@@ -114,75 +112,80 @@ export default function WorkOrdersPage() {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-cyber-bg flex flex-col">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-8 max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
+        <main className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
+          
+          {/* Header Bar */}
+          <div className="flex items-center justify-between border-b border-cyber-cyan/20 pb-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Work Orders & Stock Check</h1>
-              <p className="text-sm text-slate-500">Plan production material requirements and calculate stock shortages.</p>
+              <h1 className="text-2xl font-orbitron font-extrabold text-white tracking-widest text-neon-cyan flex items-center gap-2">
+                <ClipboardList className="w-6 h-6 text-cyber-yellow animate-pulse" />
+                WORK ORDERS & SHORTAGE MATRIX
+              </h1>
+              <p className="text-xs font-mono-code text-cyber-cyan/70 mt-1">Plan production material requirements and compute real-time stock shortages.</p>
             </div>
             {isAdmin && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-sky-600/30 transition-all flex items-center space-x-2 text-sm"
+                className="cyber-button px-4 py-2.5 rounded-xl text-xs flex items-center space-x-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>Create Work Order</span>
+                <span>CREATE WORK ORDER</span>
               </button>
             )}
           </div>
 
           {/* Work Orders Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <Cyber3DCard glowColor="purple" className="p-0 overflow-hidden bg-cyber-surface/90 border border-cyber-cyan/30">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <table className="w-full text-left text-xs font-mono-code text-slate-300">
+                <thead className="bg-cyber-bg/90 border-b border-cyber-cyan/30 text-[10px] font-orbitron font-bold text-cyber-cyan uppercase tracking-wider">
                   <tr>
-                    <th className="px-6 py-4">WO #</th>
-                    <th className="px-6 py-4">Location</th>
-                    <th className="px-6 py-4">Required Item</th>
-                    <th className="px-6 py-4 text-center">Required Qty</th>
-                    <th className="px-6 py-4 text-center">Available Stock</th>
-                    <th className="px-6 py-4 text-center">Stock Shortage</th>
-                    <th className="px-6 py-4 text-center">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4">WO PROTOCOL #</th>
+                    <th className="px-6 py-4">LOCATION HUB</th>
+                    <th className="px-6 py-4">REQUIRED MATERIAL</th>
+                    <th className="px-6 py-4 text-center">REQUIRED QTY</th>
+                    <th className="px-6 py-4 text-center">AVAILABLE STOCK</th>
+                    <th className="px-6 py-4 text-center">SHORTAGE MATRIX</th>
+                    <th className="px-6 py-4 text-center">STATUS</th>
+                    <th className="px-6 py-4 text-right">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-cyber-cyan/10">
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-400">Loading work orders...</td>
+                      <td colSpan={8} className="px-6 py-8 text-center text-cyber-cyan font-orbitron animate-pulse">SYNCHRONIZING WORK ORDERS...</td>
                     </tr>
                   ) : workOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-400">No work orders created.</td>
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500 font-orbitron">NO WORK ORDERS CREATED.</td>
                     </tr>
                   ) : (
                     workOrders.map((wo) => {
                       const hasShortage = wo.shortageQuantity > 0;
                       return (
-                        <tr key={wo.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-sky-600">{wo.workOrderNumber}</td>
-                          <td className="px-6 py-4 font-semibold text-slate-700">{wo.location.name}</td>
+                        <tr key={wo.id} className="hover:bg-cyber-cyan/5 transition-colors">
+                          <td className="px-6 py-4 font-bold text-cyber-cyan text-xs text-neon-cyan">{wo.workOrderNumber}</td>
+                          <td className="px-6 py-4 font-bold text-white">{wo.location.name}</td>
                           <td className="px-6 py-4">
-                            <div className="font-semibold text-slate-800">{wo.item.name}</div>
-                            <div className="text-xs text-slate-400 font-mono">{wo.item.sku}</div>
+                            <div className="font-bold text-white text-xs">{wo.item.name}</div>
+                            <div className="text-[10px] text-cyber-cyan">{wo.item.sku}</div>
                           </td>
-                          <td className="px-6 py-4 text-center font-bold text-slate-800">{wo.requiredQuantity} {wo.item.unit}</td>
-                          <td className="px-6 py-4 text-center font-bold text-slate-700">{wo.availableQuantity} {wo.item.unit}</td>
+                          <td className="px-6 py-4 text-center font-bold text-white">{wo.requiredQuantity} {wo.item.unit}</td>
+                          <td className="px-6 py-4 text-center font-bold text-cyber-cyan">{wo.availableQuantity} {wo.item.unit}</td>
                           <td className="px-6 py-4 text-center">
                             {hasShortage ? (
-                              <span className="inline-flex items-center space-x-1 px-3 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-full font-bold text-xs">
+                              <span className="inline-flex items-center space-x-1 px-3 py-1 bg-cyber-pink/10 border border-cyber-pink/50 text-cyber-pink rounded-md font-orbitron font-bold text-[10px] text-neon-pink">
                                 <AlertCircle className="w-3.5 h-3.5" />
-                                <span>{wo.shortageQuantity} Shortage</span>
+                                <span>{wo.shortageQuantity} SHORTAGE</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center space-x-1 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full font-bold text-xs">
+                              <span className="inline-flex items-center space-x-1 px-3 py-1 bg-cyber-green/10 border border-cyber-green/50 text-cyber-green rounded-md font-orbitron font-bold text-[10px] text-neon-green">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Sufficient</span>
+                                <span>SUFFICIENT</span>
                               </span>
                             )}
                           </td>
@@ -193,28 +196,28 @@ export default function WorkOrdersPage() {
                             {hasShortage && (
                               <Link
                                 href="/transfers"
-                                className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors inline-flex items-center space-x-1"
+                                className="text-[10px] font-orbitron font-bold px-3 py-1.5 rounded-lg border border-cyber-purple/50 bg-cyber-purple/10 text-cyber-purple hover:bg-cyber-purple/30 transition-all inline-flex items-center space-x-1"
                               >
                                 <ArrowLeftRight className="w-3.5 h-3.5" />
-                                <span>Request Transfer</span>
+                                <span>TRANSFER</span>
                               </Link>
                             )}
 
                             {wo.status === 'ASSIGNED' && (
                               <button
                                 onClick={() => handleStatusChange(wo.id, 'IN_PROGRESS')}
-                                className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                className="text-[10px] font-orbitron font-bold px-3 py-1.5 rounded-lg border border-cyber-yellow/50 bg-cyber-yellow/10 text-cyber-yellow hover:bg-cyber-yellow/30 transition-all"
                               >
-                                Start Progress
+                                START
                               </button>
                             )}
 
                             {wo.status === 'IN_PROGRESS' && (
                               <button
                                 onClick={() => handleStatusChange(wo.id, 'COMPLETED')}
-                                className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                className="text-[10px] font-orbitron font-bold px-3 py-1.5 rounded-lg border border-cyber-green/50 bg-cyber-green/10 text-cyber-green hover:bg-cyber-green/30 transition-all"
                               >
-                                Complete
+                                COMPLETE
                               </button>
                             )}
                           </td>
@@ -225,22 +228,22 @@ export default function WorkOrdersPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Cyber3DCard>
 
-          {/* Create Work Order Modal */}
-          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Production Work Order">
+          {/* Create Work Order Cyber Modal */}
+          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="CREATE PRODUCTION WORK ORDER">
             {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs font-medium mb-4">
-                {error}
+              <div className="bg-cyber-pink/10 border border-cyber-pink/50 text-cyber-pink p-3 rounded-xl text-xs font-orbitron font-bold mb-4">
+                [ERROR]: {error}
               </div>
             )}
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <form onSubmit={handleCreateSubmit} className="space-y-4 font-mono-code text-xs">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Target Location</label>
+                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Target Location Hub</label>
                 <select
                   value={locationId}
                   onChange={(e) => setLocationId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
                 >
                   {locations.map((loc) => (
                     <option key={loc.id} value={loc.id}>{loc.name} ({loc.code})</option>
@@ -249,11 +252,11 @@ export default function WorkOrdersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Material / Item Required</label>
+                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Required Material / Component</label>
                 <select
                   value={itemId}
                   onChange={(e) => setItemId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
                 >
                   {items.map((it) => (
                     <option key={it.id} value={it.id}>{it.sku} - {it.name}</option>
@@ -262,35 +265,36 @@ export default function WorkOrdersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Required Quantity</label>
+                <label className="block font-orbitron font-bold text-[10px] text-cyber-cyan uppercase mb-1">Required Quantity</label>
                 <input
                   type="number"
                   min="1"
                   value={requiredQuantity}
                   onChange={(e) => setRequiredQuantity(Number(e.target.value))}
                   required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyber-cyan"
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-cyber-cyan/20">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-orbitron font-bold text-slate-400 hover:text-white rounded-xl transition-colors"
                 >
-                  Cancel
+                  ABORT
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition-colors shadow-md"
+                  className="cyber-button px-5 py-2.5 rounded-xl text-xs"
                 >
-                  {submitting ? 'Creating...' : 'Create Work Order'}
+                  {submitting ? 'GENERATING...' : 'ISSUE WORK ORDER'}
                 </button>
               </div>
             </form>
           </Modal>
+
         </main>
       </div>
     </div>
