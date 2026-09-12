@@ -6,16 +6,13 @@ import { Sidebar } from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../lib/socket';
 import { apiRequest } from '../../lib/api';
-import { FuturisticCard } from '../../components/FuturisticCard';
 import { 
   Boxes, 
   AlertTriangle, 
   ClipboardList, 
   ArrowLeftRight, 
   ShoppingCart,
-  Zap,
-  Activity,
-  Compass
+  TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -76,147 +73,114 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-dark-bg flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
-          
-          {/* Header Banner */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-            <div>
-              <h1 className="text-2xl font-outfit font-extrabold text-white tracking-tight flex items-center gap-2">
-                <Activity className="w-6 h-6 text-sky-400" />
-                OPERATIONS MATRIX DASHBOARD
-              </h1>
-              <p className="text-xs text-slate-400 font-medium mt-1">Real-time dynamic monitoring across inventory nodes & transfer vectors.</p>
+        <main className="flex-1 p-8 max-w-7xl mx-auto space-y-8">
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Operations Dashboard</h1>
+            <p className="text-sm text-slate-500">Real-time overview of inventory levels, work orders, transfers, and customer demand.</p>
+          </div>
+
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Items</span>
+                <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
+                  <Boxes className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.totalItems}</div>
             </div>
-            <div className="flex items-center gap-2 bg-slate-900/80 border border-emerald-500/30 px-3.5 py-1.5 rounded-xl text-xs font-outfit font-bold text-emerald-400 shadow-md">
-              <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
-              <span>ATOMIC CONCURRENCY ENGINE: ACTIVE</span>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low Stock</span>
+                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.lowStockCount}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Open Work Orders</span>
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.openWorkOrders}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Transfers</span>
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                  <ArrowLeftRight className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.pendingTransfers}</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Orders</span>
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-3xl font-extrabold text-slate-800">{loading ? '...' : stats.todayOrders}</div>
             </div>
           </div>
 
-          {/* 3D Metric Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            <FuturisticCard glow="cyan" className="p-4 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-outfit font-bold text-slate-400 uppercase tracking-wider">TOTAL ITEMS</span>
-                <div className="p-2 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-xl">
-                  <Boxes className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-outfit font-extrabold text-white">{loading ? '...' : stats.totalItems}</div>
-            </FuturisticCard>
-
-            <FuturisticCard glow="rose" className="p-4 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-outfit font-bold text-slate-400 uppercase tracking-wider">LOW STOCK</span>
-                <div className="p-2 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-outfit font-extrabold text-rose-400">{loading ? '...' : stats.lowStockCount}</div>
-            </FuturisticCard>
-
-            <FuturisticCard glow="amber" className="p-4 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-outfit font-bold text-slate-400 uppercase tracking-wider">OPEN WORK ORDERS</span>
-                <div className="p-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl">
-                  <ClipboardList className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-outfit font-extrabold text-amber-400">{loading ? '...' : stats.openWorkOrders}</div>
-            </FuturisticCard>
-
-            <FuturisticCard glow="indigo" className="p-4 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-outfit font-bold text-slate-400 uppercase tracking-wider">PENDING TRANSFERS</span>
-                <div className="p-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 rounded-xl">
-                  <ArrowLeftRight className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-outfit font-extrabold text-indigo-400">{loading ? '...' : stats.pendingTransfers}</div>
-            </FuturisticCard>
-
-            <FuturisticCard glow="emerald" className="p-4 flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-outfit font-bold text-slate-400 uppercase tracking-wider">DEMAND ORDERS</span>
-                <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl">
-                  <ShoppingCart className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-outfit font-extrabold text-emerald-400">{loading ? '...' : stats.todayOrders}</div>
-            </FuturisticCard>
-
-          </div>
-
-          {/* Futuristic Business Workflow Portal */}
-          <FuturisticCard glow="cyan" className="p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-              <h2 className="font-outfit font-bold text-base text-white tracking-tight flex items-center gap-2">
-                <Compass className="w-5 h-5 text-sky-400" />
-                OPERATIONAL BUSINESS PROTOCOLS
-              </h2>
-              <span className="text-[10px] font-mono-code font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/30">
-                POSTGRES ATOMIC ENGINE
-              </span>
-            </div>
-
+          {/* Quick Flow Navigation */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <h2 className="text-lg font-bold text-slate-800">Complete Business Lifecycle Workflow</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              
-              <Link href="/inventory">
-                <div className="glass-panel p-4 rounded-xl border border-slate-800 hover:border-sky-500/50 transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-sky-500/20 border border-sky-500/40 text-sky-400 rounded-xl group-hover:scale-110 transition-transform">
-                      <Boxes className="w-5 h-5" />
-                    </div>
-                    <div className="font-outfit font-bold text-xs text-white group-hover:text-sky-400 tracking-wide">1. Inventory Control</div>
+              <Link href="/inventory" className="group p-4 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-sky-600 text-white rounded-lg">
+                    <Boxes className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-medium text-slate-400">Monitor physical, reserved & available stock levels across warehouses.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-sky-600">1. Stock Check</div>
                 </div>
+                <p className="text-xs text-slate-500">Monitor physical, reserved, and available quantity across warehouses.</p>
               </Link>
 
-              <Link href="/work-orders">
-                <div className="glass-panel p-4 rounded-xl border border-slate-800 hover:border-amber-500/50 transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl group-hover:scale-110 transition-transform">
-                      <ClipboardList className="w-5 h-5" />
-                    </div>
-                    <div className="font-outfit font-bold text-xs text-white group-hover:text-amber-400 tracking-wide">2. Work Orders</div>
+              <Link href="/work-orders" className="group p-4 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-amber-600 text-white rounded-lg">
+                    <ClipboardList className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-medium text-slate-400">Issue assembly work orders, calculate material shortages & check availability.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-amber-600">2. Work Orders</div>
                 </div>
+                <p className="text-xs text-slate-500">Create work orders, check material availability, and identify shortages.</p>
               </Link>
 
-              <Link href="/transfers">
-                <div className="glass-panel p-4 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 rounded-xl group-hover:scale-110 transition-transform">
-                      <ArrowLeftRight className="w-5 h-5" />
-                    </div>
-                    <div className="font-outfit font-bold text-xs text-white group-hover:text-indigo-400 tracking-wide">3. Stock Transfers</div>
+              <Link href="/transfers" className="group p-4 bg-slate-50 hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-purple-600 text-white rounded-lg">
+                    <ArrowLeftRight className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-medium text-slate-400">Transfer stock between BLR & MAA hubs with atomic dispatch & receipt.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-purple-600">3. Stock Transfers</div>
                 </div>
+                <p className="text-xs text-slate-500">Transfer stock between Bangalore and Chennai with dispatch & receive controls.</p>
               </Link>
 
-              <Link href="/customer-orders">
-                <div className="glass-panel p-4 rounded-xl border border-slate-800 hover:border-emerald-500/50 transition-all group space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 rounded-xl group-hover:scale-110 transition-transform">
-                      <ShoppingCart className="w-5 h-5" />
-                    </div>
-                    <div className="font-outfit font-bold text-xs text-white group-hover:text-emerald-400 tracking-wide">4. Customer Orders</div>
+              <Link href="/customer-orders" className="group p-4 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition-all">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-emerald-600 text-white rounded-lg">
+                    <ShoppingCart className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] font-medium text-slate-400">Execute PostgreSQL SELECT FOR UPDATE stock reservations with 409 protection.</p>
+                  <div className="font-bold text-slate-800 group-hover:text-emerald-600">4. Customer Orders</div>
                 </div>
+                <p className="text-xs text-slate-500">Create sales orders and execute atomic PostgreSQL stock reservations.</p>
               </Link>
-
             </div>
-          </FuturisticCard>
-
+          </div>
         </main>
       </div>
     </div>
