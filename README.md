@@ -16,13 +16,14 @@ This repository demonstrates full-stack engineering practices, security hygiene,
 
 ## 🌐 Live Production Deployment & Links
 
-* **Live Frontend Web App (Vercel)**: [https://mini-operations-erp-frontend.vercel.app](https://mini-operations-erp-frontend.vercel.app)
+* **Live Frontend Web App (Vercel)**: [https://mini-operations-erp-frontend-git-main-sandeep-js-projects.vercel.app](https://mini-operations-erp-frontend-git-main-sandeep-js-projects.vercel.app)
 * **Live Backend API (Render)**: [https://mini-operations-erp-backend-l7sh.onrender.com/api](https://mini-operations-erp-backend-l7sh.onrender.com/api)
 * **Interactive Swagger API Docs**: [https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/](https://mini-operations-erp-backend-l7sh.onrender.com/api/docs/)
 * **Docker Hub Registry**: [`sandeepj07/mini-operations-erp-backend`](https://hub.docker.com/r/sandeepj07/mini-operations-erp-backend)
 * **Postman Public Workspace**: [Run Postman Collection & Environment](https://sandeep-4675570.postman.co/workspace/mini-operations-erp/run/44214802-9182537c-7f6b-401d-b24a-dc4f09c2c4e5?action=share&creator=44214802&active-environment=44214802-4e272975-6ee4-462e-8961-6ba1a1a31f37)
 * **GitHub Repository**: [https://github.com/sandeepj-git567/mini-operations-erp](https://github.com/sandeepj-git567/mini-operations-erp)
 * **Loom Video Demo**: [Watch 5-Minute Technical Walkthrough](https://www.loom.com/share/7c7ed9a60d844a91bf2ee5117b44f4a9)
+
 
 ---
 
@@ -71,6 +72,8 @@ Propagates `X-Request-ID` correlation headers across requests. Logs structured J
 | **`ADMIN`** | `admin@example.com` | `Password123!` | Full System Access (Users, Adjustments, Work Orders, Transfers, Sales, Reservations) |
 | **`OPERATIONS_USER`** | `operations@example.com` | `Password123!` | Inventory Adjustments, Work Order Processing, Stock Transfers (Dispatch/Receive) |
 | **`SALES_REPRESENTATIVE`** | `sales@example.com` | `Password123!` | Customer Management, Customer Sales Orders, Atomic Stock Reservations & Cancellations |
+
+> 🛡️ **Security Notice**: Demo credentials (`admin@example.com`, etc.) are isolated accounts created via database seeds (`prisma/seed.ts`) intended exclusively for local development and evaluator testing. They are **not** reused in production systems or connected to sensitive data.
 
 ---
 
