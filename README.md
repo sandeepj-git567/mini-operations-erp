@@ -8,9 +8,9 @@
 [![Docker](https://img.shields.io/badge/Docker-sandeepj07-blue.svg)](https://hub.docker.com/r/sandeepj07/mini-operations-erp-backend)
 [![CI Pipeline](https://img.shields.io/badge/GitHub_Actions-CI_Passed-success.svg)](https://github.com/sandeepj-git567/mini-operations-erp/actions)
 
-A production-grade, real-time **Mini Operations ERP** platform built for high-concurrency inventory control, work order tracking, stock transfers, and customer sales order fulfillment.
+A real-time **Mini Operations ERP** platform designed to protect inventory integrity using database transactions for inventory control, work order tracking, stock transfers, and customer sales order fulfillment.
 
-This repository demonstrates enterprise full-stack engineering, security hygiene, concurrency control (`SELECT FOR UPDATE`), multi-stage Docker containerization, POSIX shell automation, GitHub Actions CI/CD pipelines, structured JSON logging, and AWS cloud deployment strategy.
+This repository demonstrates full-stack engineering practices, security hygiene, transaction-based stock reservation (`SELECT FOR UPDATE`), multi-stage Docker containerization, POSIX shell automation, GitHub Actions CI/CD pipelines, structured JSON logging, and AWS cloud deployment strategy.
 
 ---
 
@@ -119,6 +119,8 @@ All architectural decisions, diagrams, and security models are documented in the
 13. [docs/AWS_DEPLOYMENT.md](file:///docs/AWS_DEPLOYMENT.md) — AWS Cloud Architecture, ECS Fargate, Multi-AZ RDS & Terraform IaC
 14. [docs/ER-DIAGRAM.md](file:///docs/ER-DIAGRAM.md) — Entity-Relationship Diagram & Database Schemas
 15. [docs/DEMO-SCRIPT.md](file:///docs/DEMO-SCRIPT.md) — Step-by-Step Technical Demo Script for Evaluators
+16. [docs/SECURITY_SECRETS.md](file:///docs/SECURITY_SECRETS.md) — Security Policy, `.env` Isolation & Environment Variable Schema
+17. [docs/CREDENTIAL_ROTATION.md](file:///docs/CREDENTIAL_ROTATION.md) — Manual Credential Rotation & Secret Maintenance Procedure
 
 ---
 

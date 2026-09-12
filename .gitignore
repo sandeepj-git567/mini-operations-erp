@@ -1,9 +1,11 @@
-node_modules
-dist
-.next
+node_modules/
+dist/
+.next/
 .env
 .env.*
 !.env.example
+!.env.*.example
+coverage/
+logs/
 *.log
-coverage
-
+.DS_Store
