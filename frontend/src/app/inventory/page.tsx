@@ -7,16 +7,15 @@ import { Modal } from '../../components/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../lib/socket';
 import { apiRequest } from '../../lib/api';
-import { Inventory, InventoryTransaction, Location } from '../../types';
-import { Plus, History, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Inventory, InventoryTransaction } from '../../types';
+import { FuturisticCard } from '../../components/FuturisticCard';
+import { Plus, History, AlertTriangle, RefreshCw, Boxes } from 'lucide-react';
 
 export default function InventoryPage() {
   const { user } = useAuth();
   const { subscribe } = useSocket();
   const [inventories, setInventories] = useState<Inventory[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterLocation, setFilterLocation] = useState('');
   const [filterLowStock, setFilterLowStock] = useState(false);
 
   // Modal States
@@ -36,7 +35,6 @@ export default function InventoryPage() {
   const fetchInventoryData = async () => {
     try {
       let query = '?';
-      if (filterLocation) query += `locationId=${filterLocation}&`;
       if (filterLowStock) query += `lowStock=true&`;
 
       const data = await apiRequest(`/inventory${query}`);
@@ -50,7 +48,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventoryData();
-  }, [filterLocation, filterLowStock]);
+  }, [filterLowStock]);
 
   useEffect(() => {
     const unsub = subscribe('INVENTORY_UPDATED', (payload: any) => {
@@ -112,20 +110,25 @@ export default function InventoryPage() {
   const canAdjust = user?.role === 'ADMIN' || user?.role === 'OPERATIONS_USER';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-dark-bg flex flex-col">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-8 max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
+        <main className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
+          
+          {/* Header Bar */}
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Inventory Control</h1>
-              <p className="text-sm text-slate-500">Live physical, reserved, and available stock levels across warehouse locations.</p>
+              <h1 className="text-2xl font-outfit font-extrabold text-white tracking-tight flex items-center gap-2">
+                <Boxes className="w-6 h-6 text-sky-400" />
+                INVENTORY CONTROL MATRIX
+              </h1>
+              <p className="text-xs text-slate-400 font-medium mt-1">Live physical, reserved, and available stock metrics across warehouse nodes.</p>
             </div>
             {canAdjust && (
               <button
                 onClick={() => openAdjustModal()}
-                className="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-sky-600/30 transition-all flex items-center space-x-2 text-sm"
+                className="btn-futuristic px-4 py-2.5 rounded-xl text-xs flex items-center space-x-2 shadow-lg shadow-sky-500/20"
               >
                 <Plus className="w-4 h-4" />
                 <span>Adjust Stock</span>
@@ -134,71 +137,71 @@ export default function InventoryPage() {
           </div>
 
           {/* Filters Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <FuturisticCard glow="cyan" className="p-4 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2 text-sm font-semibold text-slate-700">
+              <label className="flex items-center space-x-2 text-xs font-outfit font-bold text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filterLowStock}
                   onChange={(e) => setFilterLowStock(e.target.checked)}
-                  className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4"
+                  className="rounded border-slate-700 bg-slate-900 text-sky-400 focus:ring-sky-400 w-4 h-4"
                 />
-                <span className="flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  Low Stock Only (&lt;10 Available)
+                <span className="flex items-center gap-1.5 text-amber-400">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  Low Stock Alert (&lt;10 Available)
                 </span>
               </label>
             </div>
 
             <button
               onClick={fetchInventoryData}
-              className="text-slate-500 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors text-sm flex items-center gap-1 font-medium"
+              className="text-xs font-outfit font-bold text-sky-400 hover:text-white px-3 py-1.5 rounded-xl border border-slate-800 hover:border-sky-500/40 transition-all flex items-center gap-1.5"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh Matrix</span>
             </button>
-          </div>
+          </FuturisticCard>
 
-          {/* Inventory Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Inventory Data Table */}
+          <FuturisticCard glow="indigo" className="p-0 overflow-hidden border border-slate-800">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <table className="w-full text-left text-xs font-medium text-slate-300">
+                <thead className="bg-slate-950/80 border-b border-slate-800 text-[11px] font-outfit font-bold text-slate-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-4">SKU & Item Name</th>
                     <th className="px-6 py-4">Category</th>
-                    <th className="px-6 py-4">Location</th>
+                    <th className="px-6 py-4">Location Hub</th>
                     <th className="px-6 py-4 text-center">Physical Qty</th>
                     <th className="px-6 py-4 text-center">Reserved Qty</th>
                     <th className="px-6 py-4 text-center">Available Qty</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-slate-800/60 font-medium">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">Loading inventory data...</td>
+                      <td colSpan={7} className="px-6 py-8 text-center text-sky-400 font-outfit font-bold animate-pulse">Loading Inventory Matrix...</td>
                     </tr>
                   ) : inventories.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">No inventory records found.</td>
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-outfit">No inventory records found.</td>
                     </tr>
                   ) : (
                     inventories.map((inv) => {
                       const isLow = inv.availableQuantity < 10;
                       return (
-                        <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                        <tr key={inv.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="px-6 py-4">
-                            <div className="font-mono font-bold text-sky-600 text-xs">{inv.item.sku}</div>
-                            <div className="font-semibold text-slate-800">{inv.item.name}</div>
+                            <div className="font-mono-code font-bold text-sky-400 text-xs">{inv.item.sku}</div>
+                            <div className="font-outfit font-bold text-white text-xs">{inv.item.name}</div>
                           </td>
-                          <td className="px-6 py-4 text-slate-500">{inv.item.category?.name}</td>
-                          <td className="px-6 py-4 text-slate-700 font-semibold">{inv.location.name}</td>
-                          <td className="px-6 py-4 text-center font-bold text-slate-800">{inv.physicalQuantity} {inv.item.unit}</td>
-                          <td className="px-6 py-4 text-center font-bold text-amber-600">{inv.reservedQuantity} {inv.item.unit}</td>
+                          <td className="px-6 py-4 text-slate-400">{inv.item.category?.name}</td>
+                          <td className="px-6 py-4 text-sky-300 font-bold">{inv.location.name}</td>
+                          <td className="px-6 py-4 text-center font-bold text-white">{inv.physicalQuantity} {inv.item.unit}</td>
+                          <td className="px-6 py-4 text-center font-bold text-amber-400">{inv.reservedQuantity} {inv.item.unit}</td>
                           <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full font-bold ${
-                              isLow ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full font-outfit font-bold text-[11px] border ${
+                              isLow ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                             }`}>
                               {inv.availableQuantity} {inv.item.unit}
                             </span>
@@ -207,17 +210,16 @@ export default function InventoryPage() {
                             {canAdjust && (
                               <button
                                 onClick={() => openAdjustModal(inv)}
-                                className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors"
+                                className="text-[11px] font-outfit font-bold px-3 py-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all"
                               >
                                 Adjust
                               </button>
                             )}
                             <button
                               onClick={() => openLogsModal(inv)}
-                              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors inline-flex items-center space-x-1"
-                              title="Audit History"
+                              className="text-[11px] font-outfit font-bold px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-all inline-flex items-center space-x-1"
                             >
-                              <History className="w-3.5 h-3.5" />
+                              <History className="w-3.5 h-3.5 text-indigo-400" />
                               <span>Logs</span>
                             </button>
                           </td>
@@ -228,18 +230,18 @@ export default function InventoryPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </FuturisticCard>
 
           {/* Adjust Stock Modal */}
           <Modal isOpen={isAdjustModalOpen} onClose={() => setIsAdjustModalOpen(false)} title="Adjust Inventory Quantity">
             {adjustError && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs font-medium mb-4">
+              <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl text-xs font-semibold mb-4">
                 {adjustError}
               </div>
             )}
-            <form onSubmit={handleAdjustSubmit} className="space-y-4">
+            <form onSubmit={handleAdjustSubmit} className="space-y-4 font-medium text-xs">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Target Item & Location</label>
+                <label className="block font-outfit font-bold text-xs text-slate-300 uppercase mb-1">Target Item & Location</label>
                 <select
                   value={`${adjustItemId}_${adjustLocationId}`}
                   onChange={(e) => {
@@ -247,7 +249,7 @@ export default function InventoryPage() {
                     setAdjustItemId(item);
                     setAdjustLocationId(loc);
                   }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
                 >
                   {inventories.map((inv) => (
                     <option key={inv.id} value={`${inv.itemId}_${inv.locationId}`}>
@@ -258,40 +260,40 @@ export default function InventoryPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Quantity Adjustment (+ or -)</label>
+                <label className="block font-outfit font-bold text-xs text-slate-300 uppercase mb-1">Quantity Adjustment Delta (+ or -)</label>
                 <input
                   type="number"
                   value={adjustQuantity}
                   onChange={(e) => setAdjustQuantity(Number(e.target.value))}
                   required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">Use positive numbers for intake (e.g. +20), negative for deduction (e.g. -5).</p>
+                <p className="text-[11px] text-slate-500 mt-1">Use positive numbers for intake (+20), negative for deduction (-5).</p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Reason / Justification</label>
+                <label className="block font-outfit font-bold text-xs text-slate-300 uppercase mb-1">Reason / Justification</label>
                 <input
                   type="text"
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
                   required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAdjustModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-outfit font-bold text-slate-400 hover:text-white rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={adjustSubmitting}
-                  className="px-5 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition-colors shadow-md"
+                  className="btn-futuristic px-5 py-2.5 rounded-xl text-xs"
                 >
                   {adjustSubmitting ? 'Saving...' : 'Save Adjustment'}
                 </button>
@@ -301,19 +303,19 @@ export default function InventoryPage() {
 
           {/* Audit Logs Modal */}
           <Modal isOpen={isLogsModalOpen} onClose={() => setIsLogsModalOpen(false)} title={`Inventory Audit Logs - ${selectedInvTitle}`}>
-            <div className="space-y-3">
+            <div className="space-y-3 font-medium text-xs">
               {selectedInvLogs.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">No audit transactions recorded yet.</p>
+                <p className="text-xs text-slate-500 text-center py-4 font-outfit">No audit transactions recorded.</p>
               ) : (
                 selectedInvLogs.map((log) => (
-                  <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <div key={log.id} className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold font-mono text-sky-600">{log.movementType}</span>
-                      <span className="text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
+                      <span className="font-outfit font-bold text-sky-400">{log.movementType}</span>
+                      <span className="text-[10px] text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>
                     </div>
-                    <div className="text-slate-700 font-medium">{log.reason}</div>
-                    <div className="text-slate-400 flex justify-between">
-                      <span>Quantity: <strong className="text-slate-800">{log.quantity}</strong></span>
+                    <div className="text-slate-300 font-semibold">{log.reason}</div>
+                    <div className="text-[11px] text-slate-400 flex justify-between">
+                      <span>Quantity: <strong className="text-emerald-400">{log.quantity}</strong></span>
                       <span>By: {log.createdBy}</span>
                     </div>
                   </div>
@@ -321,6 +323,7 @@ export default function InventoryPage() {
               )}
             </div>
           </Modal>
+
         </main>
       </div>
     </div>
