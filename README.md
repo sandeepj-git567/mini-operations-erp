@@ -92,14 +92,21 @@ cd mini-operations-erp
 ./scripts/test.sh
 ```
 
-### Method B: Local Stack Orchestration via Docker Compose
+### Method B: Containerized Execution via Docker Compose (Supabase Connection)
 ```bash
-# Build and launch PostgreSQL and Express API containers in background
-docker-compose up -d --build
+# 1. Copy environment template and configure Supabase credentials
+cp .env.docker.example .env.docker
 
-# View real-time container logs
-docker-compose logs -f backend
+# 2. Verify configuration
+docker compose config
+
+# 3. Build and launch Backend & Frontend containers in background
+docker compose up -d --build
+
+# 4. View real-time container logs
+docker compose logs -f
 ```
+
 
 ---
 
